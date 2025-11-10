@@ -1,13 +1,15 @@
 
 'use server';
-import { PrismaClient, User, Comment, Book, CommunityPost, Activity, Follow, Chapter } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import type { User, Comment, Book, CommunityPost, Follow, Chapter } from '@prisma/client';
+
 import bcrypt from 'bcryptjs';
 import { ReadingProgress, Bookmark } from '../lib/definitions';
 
 export const prisma = new PrismaClient();
 
 // Re-export types for client-side usage
-export type { User, Comment, Book, CommunityPost, Activity, Chapter, Follow } from '@prisma/client';
+export type { User, Comment, Book, CommunityPost, Chapter, Follow } from '@prisma/client';
 export type { ReadingProgress, Bookmark } from '../lib/definitions';
 
 
@@ -116,18 +118,6 @@ export const createPublication = async (data: { authorId: number, content: strin
     return publication;
 }
 
-export const getActivities = async () => {
-    return prisma.activity.findMany({
-        include: {
-            author: true,
-            book: true,
-        },
-        orderBy: {
-            createdAt: 'desc'
-        },
-        take: 10,
-    });
-}
 
 export const getFollowing = async (userId: number) => {
     const followingRelations = await prisma.follow.findMany({

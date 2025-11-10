@@ -1,5 +1,6 @@
 
-import type { User as PrismaUser, Book as PrismaBook, Chapter as PrismaChapter, CommunityPost as PrismaCommunityPost, Comment as PrismaComment, Activity as PrismaActivity, Follow as PrismaFollow } from '@prisma/client';
+
+import type { User as PrismaUser, Book as PrismaBook, Chapter as PrismaChapter, CommunityPost as PrismaCommunityPost, Comment as PrismaComment, Follow as PrismaFollow } from '@prisma/client';
 
 // We extend the Prisma types to include relations that we expand in our queries
 
@@ -18,12 +19,6 @@ export interface Comment extends PrismaComment {
 export interface CommunityPost extends PrismaCommunityPost {
     author: User;
     comments?: Comment[];
-    commentsCount?: number;
-}
-
-export interface Activity extends PrismaActivity {
-    author: User | null;
-    book: Book | null;
     commentsCount?: number;
 }
 

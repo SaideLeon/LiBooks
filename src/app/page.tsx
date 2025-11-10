@@ -15,7 +15,6 @@ import NewPublicationScreen from '@/screens/NewPublicationScreen';
 import CommentsScreen from '@/screens/CommentsScreen';
 import BottomNav from '@/components/BottomNav';
 import SideNav from '@/components/SideNav';
-import HomeScreenRightSidebar from '@/components/HomeScreenRightSidebar';
 import LibraryScreen from '@/screens/LibraryScreen';
 import { User, Book } from '@/lib/prisma/definitions';
 import { getBookById } from '@/lib/actions';
@@ -66,7 +65,9 @@ export default function Home() {
       if ((currentPage === 'bookDetail' || currentPage === 'reader') && currentNavigationState.params?.bookId) {
         setIsBookLoading(true);
         const book = await getBookById(currentNavigationState.params.bookId);
-        setCurrentBook(book);
+        if (book) {
+          setCurrentBook(book);
+        }
         setIsBookLoading(false);
       } else {
         setCurrentBook(null);
@@ -157,10 +158,6 @@ export default function Home() {
               {showBottomNav && <BottomNav activeTab={getActiveTab()} setActiveTab={changeTab} />}
             </div>
           </div>
-
-          <aside className="hidden xl:block xl:w-80 shrink-0 border-l border-zinc-200 dark:border-zinc-800">
-             {currentPage === 'home' && <HomeScreenRightSidebar />}
-          </aside>
         </div>
       </div>
     </div>
