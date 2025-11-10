@@ -214,7 +214,6 @@ export async function getAllBookmarks(userId: number) {
         book: {
             include: { chapters: true }
         },
-        chapter: true
     },
     orderBy: { createdAt: 'desc' },
   });

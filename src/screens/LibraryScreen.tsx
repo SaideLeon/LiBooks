@@ -1,7 +1,7 @@
 
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Book, Bookmark, ReadingProgress, getAllReadingProgress, getAllBookmarks, getBooks } from '@/lib/actions';
+import { Book, Bookmark, ReadingProgress, getAllReadingProgress, getAllBookmarks, Chapter } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
 
@@ -13,11 +13,16 @@ interface BookWithProgress extends Book {
     progress: ReadingProgress;
 }
 
+// Define a new type for the bookmark that we will use in the component state
+type BookmarkWithRelations = Bookmark & { 
+  book: Book & { chapters: Chapter[] };
+};
+
 const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
     const { user } = useUser();
     const [activeTab, setActiveTab] = useState<'books' | 'bookmarks'>('books');
     const [myBooks, setMyBooks] = useState<BookWithProgress[]>([]);
-    const [bookmarks, setBookmarks] = useState<(Bookmark & { book?: Book, chapter?: Book['chapters'][0] })[]>([]);
+    const [bookmarks, setBookmarks] = useState<BookmarkWithRelations[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -35,7 +40,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
                 setMyBooks(booksWithProgress);
             } else {
                 const allBookmarks = await getAllBookmarks(user.id);
-                setBookmarks(allBookmarks as (Bookmark & { book: Book, chapter: Book['chapters'][0]})[]);
+                setBookmarks(allBookmarks as BookmarkWithRelations[]);
             }
             setIsLoading(false);
         };
@@ -100,6 +105,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
                             <div className="flex flex-col gap-4">
                                 {bookmarks.length > 0 ? bookmarks.map((bookmark) => {
                                     if (!bookmark.book) return null;
+                                    const chapter = bookmark.book.chapters.find(c => c.id === bookmark.chapterId);
                                     return (
                                         <div key={bookmark.id} onClick={() => handleBookmarkClick(bookmark)} className="flex cursor-pointer flex-col gap-2 rounded-lg bg-card-light p-4 shadow-sm dark:bg-card-dark">
                                             <div className="flex items-center gap-3">
@@ -107,7 +113,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
                                                 <div>
                                                     <p className="font-bold text-text-light dark:text-text-dark">{bookmark.book.title}</p>
                                                     <p className="text-sm text-text-muted-light dark:text-text-muted-dark">{bookmark.book.author}</p>
-                                                    <p className="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">Cap. {bookmark.chapter?.id}: {bookmark.chapter?.title}</p>
+                                                    <p className="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">Cap. {chapter?.id}: {chapter?.title}</p>
                                                 </div>
                                             </div>
                                             <p className="mt-2 text-sm italic text-text-light dark:text-text-dark line-clamp-3">
