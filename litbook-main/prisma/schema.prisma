@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  email         String          @unique
+  password      String
+  name          String
+  avatarUrl     String?
+  bio           String?
+  posts         CommunityPost[] @relation("UserPosts")
+  comments      Comment[]
+  activities    Activity[]
+  publications  Publication[]
+  followers     Follow[]        @relation("Following")
+  following     Follow[]        @relation("Follower")
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+}
+
+model Follow {
+  followerId  Int
+  followingId Int
+  follower    User @relation("Follower", fields: [followerId], references: [id])
+  following   User @relation("Following", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+}
+
+model Book {
+  id          Int        @id @default(autoincrement())
+  title       String
+  author      String
+  coverUrl    String
+  description String
+  preface     String
+  chapters    Chapter[]
+  activities  Activity[]
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+}
+
+model Chapter {
+  id         Int      @id @default(autoincrement())
+  title      String
+  subtitle   String?
+  content    String[]
+  book       Book     @relation(fields: [bookId], references: [id])
+  bookId     Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model CommunityPost {
+  id          Int       @id @default(autoincrement())
+  author      User      @relation("UserPosts", fields: [authorId], references: [id])
+  authorId    Int
+  timestamp   DateTime  @default(now())
+  quote       String
+  comment     String
+  bookVerse   String
+  likes       Int       @default(0)
+  isLiked     Boolean   @default(false)
+  imageUrl    String?
+  comments    Comment[]
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+}
+
+model Comment {
+  id              Int            @id @default(autoincrement())
+  text            String
+  user            User           @relation(fields: [userId], references: [id])
+  userId          Int
+  communityPost   CommunityPost? @relation(fields: [communityPostId], references: [id])
+  communityPostId Int?
+  timestamp       DateTime       @default(now())
+  likes           Int            @default(0)
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+}
+
+model Activity {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  action     String
+  book       Book?    @relation(fields: [bookId], references: [id])
+  bookId     Int?
+  comment    String?
+  likes      Int      @default(0)
+  comments   Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Publication {
+  id         Int      @id @default(autoincrement())
+  verse      String
+  title      String
+  content    String
+  quote      String
+  imageUrl   String?
+  likes      Int      @default(0)
+  comments   Int      @default(0)
+  shares     Int      @default(0)
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}

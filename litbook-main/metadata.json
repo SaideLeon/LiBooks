@@ -1,0 +1,5 @@
+{
+  "name": "LitBook",
+  "description": "A social e-reader application that combines book reading with community features. Users can read books, share notes, see friends' activities, and engage with a community of readers.",
+  "requestFramePermissions": []
+}

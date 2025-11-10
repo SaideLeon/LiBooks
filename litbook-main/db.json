@@ -1,0 +1,44 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "maria@example.com",
+      "password": "password123",
+      "name": "Maria",
+      "avatarUrl": "https://picsum.photos/id/237/100/100",
+      "bio": "Amante da leitura e da reflexão. Compartilhando pensamentos e versículos inspiradores."
+    },
+    {
+      "id": 2,
+      "email": "ana@example.com",
+      "password": "password123",
+      "name": "Ana Silva",
+      "avatarUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDBA5mqLaT6BbyEjWQpqW9LVuJdXf16x1JFk1r5oCLgaysJwnV6o8vQXTWDVM2wjlty0y7o_o5UnrJocMuqrI_mU7nAej6q4SBE3bV87-00OmQD282E0VTEDKNNQzXsTC1kvghhBFBszKK36Wm45xND9kpboiryQEnRSUhLj9tGuQb79Zhd6Alm2dMIX3sJrxdivPj0QRFZBwjzxcTydD3XnZN_oBerhy3lUOxrdIU1VFFosl5fs4VlIfdX-ZmgsKpFAr2vsCmCtc8"
+    },
+    {
+      "id": 3,
+      "email": "bruno@example.com",
+      "password": "password123",
+      "name": "Bruno Costa",
+      "avatarUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuC5oI6qVavFNkLengA_pCsIx_Lc0GPgnm2O2RkSkWoD9FmUx4iSADQrhzNX7hOPsleReuc-weIF9oumewfEWX_bF2kndcRds6XfujHxSIhOCxXKjJGh-DV5fq2acslEqjYNl3j4o-sdWrpmvN7ESg4RcdfxYCm5Og6CMG7hGbuja5T6jHHyvy06V158-ufLhwnc4BXsVAKE6uLkEXbRRGSK34c77APaXkYWUY3E7NE_uh6hVC2PvkA31K_vauRJq-_cNgOQ44xoqpA"
+    }
+  ],
+  "comments": {
+    "1": [
+      {
+        "id": 1,
+        "userId": 2,
+        "timestamp": "há 2 horas",
+        "text": "Este é um dos versículos mais poderosos de toda a escritura. A imagem da criação a partir do nada é simplesmente inspiradora.",
+        "likes": 12
+      },
+      {
+        "id": 2,
+        "userId": 3,
+        "timestamp": "há 1 hora",
+        "text": "Sempre me pergunto sobre o que existia antes do 'princípio'. Uma reflexão profunda que este versículo nos convida a fazer.",
+        "likes": 8
+      }
+    ]
+  }
+}

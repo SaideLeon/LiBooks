@@ -1,26 +1,20 @@
-
-'use client';
-
 import React, { useState, useCallback, useEffect } from 'react';
-import HomeScreen from '@/screens/HomeScreen';
-import BookDetailScreen from '@/screens/BookDetailScreen';
-import LandingScreen from '@/screens/LandingScreen';
-import ReaderScreen from '@/screens/ReaderScreen';
-import SearchScreen from '@/screens/SearchScreen';
-import ProfileScreen from '@/screens/ProfileScreen';
-import SettingsScreen from '@/screens/SettingsScreen';
-import CommunityScreen from '@/screens/CommunityScreen';
-import FollowingScreen from '@/screens/FollowingScreen';
-import NewPublicationScreen from '@/screens/NewPublicationScreen';
-import CommentsScreen from '@/screens/CommentsScreen';
-import BottomNav from '@/components/BottomNav';
-import SideNav from '@/components/SideNav';
-import HomeScreenRightSidebar from '@/components/HomeScreenRightSidebar';
-import LibraryScreen from '@/screens/LibraryScreen';
-import { User, Book } from '@/lib/prisma/definitions';
-import { getBookById } from '@/lib/actions';
-import { useUser } from '@/hooks/use-user';
-import { Spinner } from '@/components/Spinner';
+import HomeScreen from './screens/HomeScreen';
+import BookDetailScreen from './screens/BookDetailScreen';
+import LandingScreen from './screens/LandingScreen';
+import ReaderScreen from './screens/ReaderScreen';
+import SearchScreen from './screens/SearchScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import CommunityScreen from './screens/CommunityScreen';
+import FollowingScreen from './screens/FollowingScreen';
+import NewPublicationScreen from './screens/NewPublicationScreen';
+import CommentsScreen from './screens/CommentsScreen';
+import BottomNav from './components/BottomNav';
+import SideNav from './components/SideNav';
+import HomeScreenRightSidebar from './components/HomeScreenRightSidebar';
+import LibraryScreen from './screens/LibraryScreen';
+import { User } from '@prisma/client';
 
 type Screen = 'home' | 'search' | 'library' | 'profile' | 'community' | 'settings';
 
@@ -29,11 +23,9 @@ interface NavigationState {
   params?: any;
 }
 
-export default function Home() {
-  const { user: currentUser, isLoading: isUserLoading, login, logout } = useUser();
+const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [navigationStack, setNavigationStack] = useState<NavigationState[]>([{ page: 'home' }]);
-  const [currentBook, setCurrentBook] = useState<Book | null>(null);
-  const [isBookLoading, setIsBookLoading] = useState(false);
 
   const navigate = useCallback((page: string, params?: any) => {
     setNavigationStack(prev => [...prev, { page, params }]);
@@ -50,49 +42,24 @@ export default function Home() {
   }, []);
 
   const handleLogin = (user: User) => {
-    login(user);
+    sessionStorage.setItem('litbook_userId', user.id.toString());
+    setCurrentUser(user);
   };
 
   const handleLogout = () => {
-    logout();
+    sessionStorage.removeItem('litbook_userId');
+    setCurrentUser(null);
     setNavigationStack([{ page: 'home' }]);
   };
-
-  const currentNavigationState = navigationStack[navigationStack.length - 1];
-  const currentPage = currentNavigationState.page;
-
-  useEffect(() => {
-    const fetchBook = async () => {
-      if ((currentPage === 'bookDetail' || currentPage === 'reader') && currentNavigationState.params?.bookId) {
-        setIsBookLoading(true);
-        const book = await getBookById(currentNavigationState.params.bookId);
-        setCurrentBook(book);
-        setIsBookLoading(false);
-      } else {
-        setCurrentBook(null);
-      }
-    };
-
-    fetchBook();
-  }, [currentPage, currentNavigationState.params]);
-
-  if (isUserLoading) {
-    return (
-        <div className="h-dvh w-screen flex items-center justify-center bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
-            <Spinner />
-        </div>
-    );
-  }
 
   if (!currentUser) {
     return <LandingScreen onLoginSuccess={handleLogin} />;
   }
 
-  const renderScreen = () => {
-    if (isBookLoading) {
-        return <div className="h-full w-full flex items-center justify-center"><Spinner /></div>;
-    }
+  const currentNavigationState = navigationStack[navigationStack.length - 1];
+  const currentPage = currentNavigationState.page;
 
+  const renderScreen = () => {
     switch (currentPage) {
       case 'home':
         return <HomeScreen navigate={navigate} currentUser={currentUser} />;
@@ -101,19 +68,21 @@ export default function Home() {
       case 'library':
         return <LibraryScreen navigate={navigate} />;
       case 'profile':
-        return <ProfileScreen navigate={navigate} user={currentUser} />;
+        return <ProfileScreen navigate={navigate} />;
       case 'community':
-        return <CommunityScreen navigate={navigate} currentUser={currentUser} />;
+        return <CommunityScreen navigate={navigate} />;
       case 'settings':
         return <SettingsScreen onLogout={handleLogout} />;
       case 'bookDetail':
-        return currentBook ? <BookDetailScreen book={currentBook} goBack={goBack} navigate={navigate} /> : <div>Book not found</div>;
+        const book = null; // MOCK_BOOKS.find(b => b.id === currentNavigationState.params.bookId);
+        return book ? <BookDetailScreen book={book} goBack={goBack} navigate={navigate} /> : <div>Book not found</div>;
       case 'reader':
-        return currentBook ? <ReaderScreen book={currentBook} chapterId={currentNavigationState.params.chapterId} paragraph={currentNavigationState.params.paragraph} goBack={goBack} /> : <div>Book not found</div>;
+         const readerBook = null; // MOCK_BOOKS.find(b => b.id === currentNavigationState.params.bookId);
+        return readerBook ? <ReaderScreen book={readerBook} chapter={currentNavigationState.params.chapter} paragraph={currentNavigationState.params.paragraph} goBack={goBack} /> : <div>Book not found</div>;
       case 'following':
         return <FollowingScreen goBack={goBack} navigate={navigate} />;
       case 'newPublication':
-        return <NewPublicationScreen goBack={goBack} currentUser={currentUser} />;
+        return <NewPublicationScreen goBack={goBack} />;
       case 'comments':
         return <CommentsScreen goBack={goBack} navigate={navigate} post={currentNavigationState.params.post} currentUser={currentUser} />;
       default:
@@ -129,7 +98,7 @@ export default function Home() {
     return 'home';
   }
 
-  const bottomNavScreens = ['home', 'search', 'profile', 'community', 'library'];
+  const bottomNavScreens = ['home', 'search', 'profile', 'community', 'library', 'settings'];
   const showBottomNav = bottomNavScreens.includes(currentPage);
   
   const CommunityFab = () => (
@@ -143,11 +112,13 @@ export default function Home() {
   return (
     <div className="h-dvh w-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
       <div className="mx-auto flex h-dvh max-w-screen-2xl">
+        {/* Side Nav (Desktop) */}
         <aside className="hidden lg:flex lg:w-64 xl:w-72 shrink-0 flex-col border-r border-zinc-200 dark:border-zinc-800">
-          <SideNav navigate={navigate} changeTab={changeTab} activeTab={getActiveTab()} currentUser={currentUser} />
+          <SideNav navigate={navigate} changeTab={changeTab} activeTab={getActiveTab()} />
         </aside>
         
         <div className="flex flex-1 min-w-0">
+          {/* Main Content */}
           <div className="flex flex-col h-dvh flex-1">
             <main className={`flex-grow overflow-y-auto ${showBottomNav ? 'pb-20' : ''} lg:pb-0`}>
               {renderScreen()}
@@ -158,6 +129,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Right Sidebar (Desktop) */}
           <aside className="hidden xl:block xl:w-80 shrink-0 border-l border-zinc-200 dark:border-zinc-800">
              {currentPage === 'home' && <HomeScreenRightSidebar />}
           </aside>
@@ -166,3 +138,5 @@ export default function Home() {
     </div>
   );
 };
+
+export default App;
