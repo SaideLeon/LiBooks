@@ -1,11 +1,12 @@
 
 'use client';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Book } from '@/lib/prisma/definitions';
+import { Book, User } from '@/lib/prisma/definitions';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from 'marked';
-import { saveReadingProgressClient, addBookmarkClient, removeBookmarkClient, isBookmarkedClient } from '@/lib/actions';
+import { saveReadingProgress, addBookmark, removeBookmark, isBookmarked, createActivity } from '@/lib/actions';
 import { useToast } from '@/components/ui/use-toast';
+import { useUser } from '@/hooks/use-user';
 
 interface ReaderScreenProps {
   book: Book;
@@ -41,6 +42,7 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({ isBookmarked, onBookmarkT
 
 
 const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph, goBack }) => {
+  const { user: currentUser } = useUser();
   const currentChapter = book.chapters?.find(c => c.id === chapterId);
   const [selectedParagraph, setSelectedParagraph] = useState<number | null>(paragraph || null);
   const [annotations, setAnnotations] = useState<Record<number, string>>({});
@@ -69,13 +71,22 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
         }, 100);
     }
   }, [paragraph]);
+  
+  const checkBookmarkStatus = useCallback(async (paragraphIdx: number) => {
+    if (!currentUser || !currentChapter) return;
+    const bookmarked = await isBookmarked(currentUser.id, book.id, currentChapter.id, paragraphIdx);
+    setIsCurrentParagraphBookmarked(bookmarked);
+  }, [currentUser, book.id, currentChapter]);
 
   useEffect(() => {
-    if (selectedParagraph && currentChapter) {
-        saveReadingProgressClient(book.id, currentChapter.id, selectedParagraph);
-        setIsCurrentParagraphBookmarked(isBookmarkedClient(book.id, currentChapter.id, selectedParagraph));
+    const updateProgressAndBookmark = async () => {
+        if (selectedParagraph && currentChapter && currentUser) {
+            await saveReadingProgress(currentUser.id, book.id, currentChapter.id, selectedParagraph);
+            await checkBookmarkStatus(selectedParagraph);
+        }
     }
-  }, [selectedParagraph, book.id, currentChapter]);
+    updateProgressAndBookmark();
+  }, [selectedParagraph, book.id, currentChapter, currentUser, checkBookmarkStatus]);
 
   const generateAnnotation = useCallback(async (paragraphText: string, paragraphIndex: number) => {
     if (!genAI.current) {
@@ -120,21 +131,17 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
     }
   }, [selectedParagraph, annotations, generateAnnotation]);
   
-  const handleBookmarkToggle = () => {
-    if (!selectedParagraph || !currentChapter) return;
+  const handleBookmarkToggle = async () => {
+    if (!selectedParagraph || !currentChapter || !currentUser) return;
     const paragraphText = currentChapter.content[selectedParagraph - 1];
 
     if (isCurrentParagraphBookmarked) {
-        removeBookmarkClient(book.id, currentChapter.id, selectedParagraph);
+        await removeBookmark(currentUser.id, book.id, currentChapter.id, selectedParagraph);
         setIsCurrentParagraphBookmarked(false);
         toast({ title: "Favorito removido" });
     } else {
-        addBookmarkClient({
-            bookId: book.id,
-            chapterId: currentChapter.id,
-            paragraphIndex: selectedParagraph,
-            text: paragraphText,
-        });
+        await addBookmark(currentUser.id, book.id, currentChapter.id, selectedParagraph, paragraphText);
+        await createActivity(currentUser.id, "ADDED_BOOKMARK", book.id, `Marcou um favorito em '${book.title}'`);
         setIsCurrentParagraphBookmarked(true);
         toast({ title: "Adicionado aos favoritos" });
     }

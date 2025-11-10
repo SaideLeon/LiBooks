@@ -2,8 +2,9 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Book, User, ReadingProgress } from '@/lib/prisma/definitions';
-import { getAllReadingProgressClient, getBooks } from '@/lib/actions';
+import { getAllReadingProgress, getBooks } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
+import { useUser } from '@/hooks/use-user';
 
 interface BookWithProgress extends Book {
     progress: ReadingProgress;
@@ -40,34 +41,32 @@ const BookCarouselItem: React.FC<{ book: Book; progress?: ReadingProgress; onCli
 };
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, currentUser }) => {
+    const { user } = useUser();
     const [continueReading, setContinueReading] = useState<BookWithProgress[]>([]);
     const [allBooks, setAllBooks] = useState<Book[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!user) return;
             setIsLoading(true);
-            const books = await getBooks();
+            const [books, progressRecords] = await Promise.all([
+                getBooks(),
+                getAllReadingProgress(user.id)
+            ]);
+            
             setAllBooks(books);
 
-            const allProgress = getAllReadingProgressClient();
-            const booksWithProgress: BookWithProgress[] = Object.keys(allProgress)
-                .map(bookIdStr => {
-                    const bookId = parseInt(bookIdStr, 10);
-                    const book = books.find(b => b.id === bookId);
-                    if (book) {
-                        return { ...book, progress: allProgress[bookId] };
-                    }
-                    return null;
-                })
-                .filter((b): b is BookWithProgress => b !== null)
-                .sort((a, b) => b.progress.timestamp - a.progress.timestamp);
+            const booksWithProgress = progressRecords.map(progressRecord => ({
+                ...progressRecord.book,
+                progress: progressRecord,
+            })).filter(b => b) as BookWithProgress[];
 
             setContinueReading(booksWithProgress);
             setIsLoading(false);
         }
         fetchData();
-    }, []);
+    }, [user]);
 
     const handleContinueReadingClick = (book: BookWithProgress) => {
         navigate('reader', {

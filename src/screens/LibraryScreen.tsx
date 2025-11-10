@@ -1,8 +1,9 @@
 
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Book, Bookmark, ReadingProgress, getAllReadingProgressClient, getAllBookmarksClient, getBooks } from '@/lib/actions';
+import { Book, Bookmark, ReadingProgress, getAllReadingProgress, getAllBookmarks, getBooks } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
+import { useUser } from '@/hooks/use-user';
 
 interface LibraryScreenProps {
   navigate: (page: string, params?: any) => void;
@@ -13,6 +14,7 @@ interface BookWithProgress extends Book {
 }
 
 const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
+    const { user } = useUser();
     const [activeTab, setActiveTab] = useState<'books' | 'bookmarks'>('books');
     const [myBooks, setMyBooks] = useState<BookWithProgress[]>([]);
     const [bookmarks, setBookmarks] = useState<(Bookmark & { book?: Book, chapter?: Book['chapters'][0] })[]>([]);
@@ -20,37 +22,26 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
 
     useEffect(() => {
         const fetchLibraryData = async () => {
-            setIsLoading(true);
-            const allBooks = await getBooks();
+            if (!user) return;
 
+            setIsLoading(true);
+            
             if (activeTab === 'books') {
-                const allProgress = getAllReadingProgressClient();
-                const booksWithProgress: BookWithProgress[] = Object.keys(allProgress)
-                    .map(bookIdStr => {
-                        const bookId = parseInt(bookIdStr, 10);
-                        const book = allBooks.find(b => b.id === bookId);
-                        if (book) {
-                            return { ...book, progress: allProgress[bookId] };
-                        }
-                        return null;
-                    })
-                    .filter((b): b is BookWithProgress => b !== null)
-                    .sort((a, b) => b.progress.timestamp - a.progress.timestamp);
+                const progressRecords = await getAllReadingProgress(user.id);
+                const booksWithProgress = progressRecords.map(record => ({
+                    ...record.book,
+                    progress: record,
+                })) as BookWithProgress[];
                 setMyBooks(booksWithProgress);
             } else {
-                const allBookmarks = getAllBookmarksClient();
-                const populatedBookmarks = allBookmarks.map(bookmark => {
-                    const book = allBooks.find(b => b.id === bookmark.bookId);
-                    const chapter = book?.chapters?.find(c => c.id === bookmark.chapterId);
-                    return { ...bookmark, book, chapter };
-                });
-                setBookmarks(populatedBookmarks);
+                const allBookmarks = await getAllBookmarks(user.id);
+                setBookmarks(allBookmarks as (Bookmark & { book: Book, chapter: Book['chapters'][0]})[]);
             }
             setIsLoading(false);
         };
 
         fetchLibraryData();
-    }, [activeTab]);
+    }, [activeTab, user]);
 
     const handleBookmarkClick = (bookmark: Bookmark) => {
         navigate('reader', { 
@@ -88,6 +79,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
                 {isLoading ? <div className="flex justify-center mt-8"><Spinner /></div> : 
                     <>
                         {activeTab === 'books' && (
+                            myBooks.length > 0 ?
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-6">
                                 {myBooks.map(book => (
                                      <div key={book.id} className="flex flex-col gap-2 cursor-pointer" onClick={() => navigate('bookDetail', { bookId: book.id })}>
@@ -95,6 +87,13 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
                                         <p className="text-sm font-semibold truncate text-text-light dark:text-text-dark">{book.title}</p>
                                      </div>
                                 ))}
+                            </div>
+                            : <div className="flex flex-col items-center justify-center text-center py-20 px-6">
+                                <span className="material-symbols-outlined text-5xl text-text-muted-light dark:text-text-muted-dark">book</span>
+                                <h3 className="text-lg font-semibold mt-4">Nenhum Livro na Biblioteca</h3>
+                                <p className="text-text-muted-light dark:text-text-muted-dark mt-1">
+                                    Comece a ler um livro para adicioná-lo aqui.
+                                </p>
                             </div>
                         )}
                         {activeTab === 'bookmarks' && (

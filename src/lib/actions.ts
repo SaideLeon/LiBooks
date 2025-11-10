@@ -180,83 +180,99 @@ export const getIsFollowing = async (currentUserId: number, targetUserId: number
 }
 
 
-// These functions interact with localStorage and must be client-side.
-// They will be handled in a client-side context or custom hooks.
+// --- Reading Progress Actions ---
 
-const PROGRESS_STORAGE_KEY = 'litbook_reading_progress';
+export async function saveReadingProgress(userId: number, bookId: number, chapterId: number, paragraphIndex: number) {
+  await prisma.readingProgress.upsert({
+    where: { userId_bookId: { userId, bookId } },
+    update: { chapterId, paragraphIndex },
+    create: { userId, bookId, chapterId, paragraphIndex },
+  });
+}
 
-export const saveReadingProgressClient = (bookId: number, chapterId: number, paragraphIndex: number): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    const allProgress = getAllReadingProgressClient();
-    allProgress[bookId] = { chapterId, paragraphIndex, timestamp: Date.now() };
-    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(allProgress));
-  } catch (error) {
-    console.error('Failed to save reading progress:', error);
-  }
-};
+export async function getReadingProgress(userId: number, bookId: number) {
+  return prisma.readingProgress.findUnique({
+    where: { userId_bookId: { userId, bookId } },
+  });
+}
 
-export const getReadingProgressClient = (bookId: number): ReadingProgress | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const allProgress = getAllReadingProgressClient();
-    return allProgress[bookId] || null;
-  } catch (error) {
-    console.error('Failed to get reading progress:', error);
-    return null;
-  }
-};
-
-export const getAllReadingProgressClient = (): Record<number, ReadingProgress> => {
-  if (typeof window === 'undefined') return {};
-  try {
-    const progressJson = localStorage.getItem(PROGRESS_STORAGE_KEY);
-    return progressJson ? JSON.parse(progressJson) : {};
-  } catch (error) {
-    console.error('Failed to get all reading progress:', error);
-    return {};
-  }
-};
+export async function getAllReadingProgress(userId: number) {
+  return prisma.readingProgress.findMany({
+    where: { userId },
+    include: { book: { include: { chapters: true } } },
+    orderBy: { updatedAt: 'desc' },
+  });
+}
 
 
-const BOOKMARKS_STORAGE_KEY = 'litbook_bookmarks';
+// --- Bookmark Actions ---
 
-export const getAllBookmarksClient = (): Bookmark[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const bookmarksJson = localStorage.getItem(BOOKMARKS_STORAGE_KEY);
-    return bookmarksJson ? JSON.parse(bookmarksJson) : [];
-  } catch (error) {
-    console.error('Failed to get bookmarks:', error);
-    return [];
-  }
-};
+export async function getAllBookmarks(userId: number) {
+  return prisma.bookmark.findMany({
+    where: { userId },
+    include: { 
+        book: {
+            include: { chapters: true }
+        },
+        chapter: true
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
 
-export const addBookmarkClient = (bookmark: Omit<Bookmark, 'timestamp' | 'id'>): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    const bookmarks = getAllBookmarksClient();
-    const newBookmark: Bookmark = { ...bookmark, id: Date.now(), timestamp: Date.now() };
-    const updatedBookmarks = [newBookmark, ...bookmarks.filter(b => !(b.bookId === bookmark.bookId && b.chapterId === bookmark.chapterId && b.paragraphIndex === bookmark.paragraphIndex))];
-    localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(updatedBookmarks));
-  } catch (error) {
-    console.error('Failed to add bookmark:', error);
-  }
-};
+export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string) {
+  return prisma.bookmark.create({
+    data: { userId, bookId, chapterId, paragraphIndex, text },
+  });
+}
 
-export const removeBookmarkClient = (bookId: number, chapterId: number, paragraphIndex: number): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    const bookmarks = getAllBookmarksClient();
-    const updatedBookmarks = bookmarks.filter(b => !(b.bookId === bookId && b.chapterId === chapterId && b.paragraphIndex === paragraphIndex));
-    localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(updatedBookmarks));
-  } catch (error) {
-    console.error('Failed to remove bookmark:', error);
-  }
-};
+export async function removeBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number) {
+  return prisma.bookmark.delete({
+    where: {
+      userId_bookId_chapterId_paragraphIndex: {
+        userId,
+        bookId,
+        chapterId,
+        paragraphIndex,
+      },
+    },
+  });
+}
 
-export const isBookmarkedClient = (bookId: number, chapterId: number, paragraphIndex: number): boolean => {
-  if (typeof window === 'undefined') return false;
-  const bookmarks = getAllBookmarksClient();
-  return bookmarks.some(b => b.bookId === bookId && b.chapterId === chapterId && b.paragraphIndex === paragraphIndex);
-};
+export async function isBookmarked(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<boolean> {
+  const bookmark = await prisma.bookmark.findUnique({
+    where: {
+      userId_bookId_chapterId_paragraphIndex: {
+        userId,
+        bookId,
+        chapterId,
+        paragraphIndex,
+      },
+    },
+  });
+  return !!bookmark;
+}
+
+
+// --- Activity Actions ---
+
+export async function createActivity(userId: number, type: string, bookId: number, comment?: string) {
+    return prisma.activity.create({
+        data: {
+            userId,
+            type,
+            bookId,
+            comment,
+        }
+    });
+}
+
+export async function getActivitiesForUser(userId: number) {
+    // This could be expanded to get activities for followed users
+    return prisma.activity.findMany({
+        where: { userId },
+        include: { user: true, book: true },
+        orderBy: { createdAt: 'desc' },
+        take: 20
+    });
+}

@@ -2,7 +2,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Book } from '@/lib/prisma/definitions';
-import { getReadingProgressClient, ReadingProgress } from '@/lib/actions';
+import { getReadingProgress, ReadingProgress } from '@/lib/actions';
+import { useUser } from '@/hooks/use-user';
 
 interface BookDetailScreenProps {
   book: Book;
@@ -45,13 +46,19 @@ const ChapterList: React.FC<{ book: Book; navigate: (page: string, params?: any)
 );
 
 const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navigate }) => {
+  const { user } = useUser();
   const [showChapters, setShowChapters] = useState(false);
   const [progress, setProgress] = useState<ReadingProgress | null>(null);
 
   useEffect(() => {
-    const savedProgress = getReadingProgressClient(book.id);
-    setProgress(savedProgress);
-  }, [book.id]);
+    const fetchProgress = async () => {
+        if (user) {
+            const savedProgress = await getReadingProgress(user.id, book.id);
+            setProgress(savedProgress);
+        }
+    }
+    fetchProgress();
+  }, [book.id, user]);
 
 
   if (showChapters) {
