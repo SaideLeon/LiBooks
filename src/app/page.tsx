@@ -103,7 +103,7 @@ export default function Home() {
       case 'library':
         return <LibraryScreen navigate={navigate} />;
       case 'profile':
-        return <ProfileScreen navigate={navigate} user={currentUser} />;
+        return <ProfileScreen navigate={navigate} user={currentNavigationState.params?.user || currentUser} />;
       case 'community':
         return <CommunityScreen navigate={navigate} currentUser={currentUser} />;
       case 'settings':

@@ -55,7 +55,7 @@ const SideNav: React.FC<SideNavProps> = ({ activeTab, changeTab, navigate, curre
         <div className="flex h-16 items-center px-2">
             <Logo />
         </div>
-        <nav className="mt-6 flex-grow space-y-2">
+        <nav className="flex-grow mt-6 space-y-2">
             {navItems.map((item) => (
             <NavItem
                 key={item.id}
