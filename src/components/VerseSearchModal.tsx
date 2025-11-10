@@ -1,6 +1,6 @@
 
 'use client';
-import React, 'react';
+import React from 'react';
 
 const BIBLE_VERSES = [
   "Gênesis 1:1", "Gênesis 1:26", "Gênesis 2:24",
