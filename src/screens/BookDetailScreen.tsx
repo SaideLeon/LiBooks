@@ -12,7 +12,7 @@ interface BookDetailScreenProps {
   navigate: (page: string, params?: any) => void;
 }
 
-const ChapterList: React.FC<{ book: Book; navigate: (page: string, params?: any) => void, goBack: () => void }> = ({ book, navigate, goBack }) => (
+const ChapterList: React.FC<{ book: Book; navigate: (page: string, params?: any) => void, goBack: () => void; isAuthor: boolean; }> = ({ book, navigate, goBack, isAuthor }) => (
     <div className="bg-background-light dark:bg-background-dark min-h-full">
         <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
             <div className="flex h-16 items-center px-4">
@@ -22,9 +22,13 @@ const ChapterList: React.FC<{ book: Book; navigate: (page: string, params?: any)
                 <div className="mx-4 flex-1 text-center">
                     <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 truncate">{book.title}</h1>
                 </div>
-                 <button className="flex size-10 shrink-0 items-center justify-center">
-                    <span className="material-symbols-outlined text-2xl text-text-light dark:text-text-dark">search</span>
-                </button>
+                 <div className="flex size-10 shrink-0 items-center justify-center">
+                    {isAuthor && (
+                        <Button variant="ghost" size="icon" onClick={() => navigate('editBook', { book })}>
+                            <span className="material-symbols-outlined text-2xl text-text-light dark:text-text-dark">add</span>
+                        </Button>
+                    )}
+                 </div>
             </div>
         </header>
         <main className="flex-1">
@@ -65,7 +69,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
 
 
   if (showChapters) {
-    return <ChapterList book={book} navigate={navigate} goBack={() => setShowChapters(false)} />;
+    return <ChapterList book={book} navigate={navigate} goBack={() => setShowChapters(false)} isAuthor={isAuthor} />;
   }
 
   const handleReadButtonClick = () => {
@@ -113,7 +117,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                         <button className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-light dark:bg-card-dark/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50">
                             <span className="material-symbols-outlined text-2xl">share</span>
                         </button>
-                        {isAuthor && <Button variant="outline">Editar Livro</Button>}
+                        {isAuthor && <Button variant="outline" onClick={() => navigate('editBook', { book })}>Editar Livro</Button>}
                     </div>
                     <div className="mt-6 w-full px-6 md:px-0">
                         <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -129,7 +133,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                             <span className="material-symbols-outlined">menu_book</span>
                             <span>Ver todos os capítulos</span>
                         </button>
-                         {isAuthor && <div className="md:hidden"><Button variant="outline" className='w-full'>Editar Livro</Button></div>}
+                         {isAuthor && <div className="md:hidden"><Button variant="outline" className='w-full' onClick={() => navigate('editBook', { book })}>Editar Livro</Button></div>}
                     </div>
                 </div>
             </div>
@@ -145,3 +149,5 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
 };
 
 export default BookDetailScreen;
+
+    

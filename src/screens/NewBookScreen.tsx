@@ -1,6 +1,5 @@
-
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,10 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 import { createBook } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
+import { Book } from '@/lib/prisma/definitions';
 
-interface NewBookScreenProps {
+interface BookFormScreenProps {
   goBack: () => void;
   navigate: (page: string, params?: any) => void;
+  existingBook?: Book | null;
 }
 
 type FormData = {
@@ -29,11 +30,14 @@ type FormData = {
   }[];
 };
 
-const NewBookScreen: React.FC<NewBookScreenProps> = ({ goBack, navigate }) => {
+const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, existingBook }) => {
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { register, control, handleSubmit, formState: { errors } } = useForm<FormData>({
+  
+  const isEditing = !!existingBook;
+
+  const { register, control, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     defaultValues: {
       title: '',
       authorName: '',
@@ -43,12 +47,37 @@ const NewBookScreen: React.FC<NewBookScreenProps> = ({ goBack, navigate }) => {
       chapters: [{ title: '', subtitle: '', content: '' }],
     },
   });
+
+  useEffect(() => {
+    if (isEditing && existingBook) {
+        reset({
+            title: existingBook.title,
+            authorName: existingBook.authorName,
+            description: existingBook.description,
+            preface: existingBook.preface,
+            coverUrl: existingBook.coverUrl,
+            chapters: existingBook.chapters?.map(c => ({...c, content: Array.isArray(c.content) ? c.content.join('\n') : c.content || ''})) || [{ title: '', subtitle: '', content: '' }],
+        });
+    }
+  }, [isEditing, existingBook, reset]);
+
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'chapters',
   });
 
   const onSubmit = async (data: FormData) => {
+    if (isEditing) {
+        // TODO: Implement update logic
+        console.log("Updating book:", data);
+        toast({
+            title: 'Funcionalidade em desenvolvimento',
+            description: 'A edição de livros será implementada em breve.',
+        });
+        return;
+    }
+
     if (!user) {
         toast({
             variant: 'destructive',
@@ -76,6 +105,9 @@ const NewBookScreen: React.FC<NewBookScreenProps> = ({ goBack, navigate }) => {
       setIsSubmitting(false);
     }
   };
+  
+  const headerTitle = isEditing ? 'Editar Livro' : 'Publicar Livro';
+  const submitButtonText = isEditing ? 'Salvar Alterações' : 'Publicar';
 
   return (
     <div className="flex h-dvh flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
@@ -83,9 +115,9 @@ const NewBookScreen: React.FC<NewBookScreenProps> = ({ goBack, navigate }) => {
         <Button variant="ghost" size="icon" onClick={goBack}>
           <span className="material-symbols-outlined">close</span>
         </Button>
-        <h1 className="flex-1 text-center text-lg font-bold">Publicar Livro</h1>
+        <h1 className="flex-1 text-center text-lg font-bold">{headerTitle}</h1>
         <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-          {isSubmitting ? <><Spinner /> Publicando...</> : 'Publicar'}
+          {isSubmitting ? <><Spinner /> Publicando...</> : submitButtonText}
         </Button>
       </header>
 
@@ -173,4 +205,4 @@ const NewBookScreen: React.FC<NewBookScreenProps> = ({ goBack, navigate }) => {
   );
 };
 
-export default NewBookScreen;
+export default BookFormScreen;

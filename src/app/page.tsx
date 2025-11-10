@@ -12,7 +12,7 @@ import SettingsScreen from '@/screens/SettingsScreen';
 import CommunityScreen from '@/screens/CommunityScreen';
 import FollowingScreen from '@/screens/FollowingScreen';
 import NewPublicationScreen from '@/screens/NewPublicationScreen';
-import NewBookScreen from '@/screens/NewBookScreen';
+import BookFormScreen from '@/screens/BookFormScreen';
 import CommentsScreen from '@/screens/CommentsScreen';
 import BottomNav from '@/components/BottomNav';
 import SideNav from '@/components/SideNav';
@@ -63,13 +63,15 @@ export default function Home() {
 
   useEffect(() => {
     const fetchBook = async () => {
-      if ((currentPage === 'bookDetail' || currentPage === 'reader') && currentNavigationState.params?.bookId) {
+      if ((currentPage === 'bookDetail' || currentPage === 'reader' || currentPage === 'editBook') && currentNavigationState.params?.bookId) {
         setIsBookLoading(true);
         const book = await getBookById(currentNavigationState.params.bookId);
         if (book) {
           setCurrentBook(book);
         }
         setIsBookLoading(false);
+      } else if (currentPage === 'editBook' && currentNavigationState.params?.book) {
+        setCurrentBook(currentNavigationState.params.book);
       } else {
         setCurrentBook(null);
       }
@@ -117,7 +119,9 @@ export default function Home() {
       case 'newPublication':
         return <NewPublicationScreen goBack={goBack} currentUser={currentUser} />;
       case 'newBook':
-        return <NewBookScreen goBack={goBack} navigate={navigate} />;
+        return <BookFormScreen goBack={goBack} navigate={navigate} />;
+      case 'editBook':
+        return <BookFormScreen goBack={goBack} navigate={navigate} existingBook={currentBook} />;
       case 'comments':
         return <CommentsScreen goBack={goBack} navigate={navigate} post={currentNavigationState.params.post} currentUser={currentUser} />;
       default:
@@ -136,14 +140,6 @@ export default function Home() {
   const bottomNavScreens = ['home', 'search', 'profile', 'community', 'library'];
   const showBottomNav = bottomNavScreens.includes(currentPage);
   
-  const CommunityFab = () => (
-    <div className="fixed bottom-0 left-0 right-0 z-20 mx-auto max-w-lg pointer-events-none h-dvh lg:hidden">
-      <button onClick={() => navigate('newPublication')} className="absolute bottom-24 right-4 flex h-14 w-14 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-primary shadow-lg transition-transform hover:scale-105 active:scale-95 pointer-events-auto">
-        <span className="material-symbols-outlined text-3xl text-white">add</span>
-      </button>
-    </div>
-  );
-
   return (
     <div className="h-dvh w-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
       <div className="mx-auto flex h-dvh max-w-screen-2xl">
@@ -156,7 +152,6 @@ export default function Home() {
             <main className={`flex-grow overflow-y-auto ${showBottomNav ? 'pb-20' : ''} lg:pb-0`}>
               {renderScreen()}
             </main>
-            {currentPage === 'community' && <CommunityFab />}
             <div className="lg:hidden">
               {showBottomNav && <BottomNav activeTab={getActiveTab()} setActiveTab={changeTab} />}
             </div>
