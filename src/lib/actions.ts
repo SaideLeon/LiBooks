@@ -81,6 +81,37 @@ export const getBookById = async (id: number) => {
     });
 };
 
+export const createBook = async (bookData: {
+  title: string;
+  author: string;
+  description: string;
+  preface: string;
+  coverUrl: string;
+  chapters: { title: string; subtitle: string; content: string }[];
+}) => {
+  const { title, author, description, preface, coverUrl, chapters } = bookData;
+
+  return prisma.book.create({
+    data: {
+      title,
+      author,
+      description,
+      preface,
+      coverUrl,
+      chapters: {
+        create: chapters.map(chapter => ({
+          title: chapter.title,
+          subtitle: chapter.subtitle,
+          content: chapter.content.split('\n').filter(p => p.trim() !== ''),
+        })),
+      },
+    },
+    include: {
+      chapters: true,
+    },
+  });
+};
+
 export const getCommunityPosts = async () => {
     const posts = await prisma.communityPost.findMany({
         include: { 
@@ -214,6 +245,19 @@ export async function getAllBookmarks(userId: number) {
 }
 
 export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string): Promise<PrismaBookmark> {
+  const bookmark = await prisma.bookmark.findFirst({
+      where: {
+          userId,
+          bookId,
+          chapterId,
+          paragraphIndex
+      }
+  });
+
+  if (bookmark) {
+    return bookmark;
+  }
+
   return prisma.bookmark.create({
     data: { userId, bookId, chapterId, paragraphIndex, text },
   });
@@ -256,7 +300,7 @@ export async function isBookmarked(userId: number, bookId: number, chapterId: nu
 
 // --- Activity Actions ---
 
-export async function createActivity(userId: number, type: string, bookId: number, comment?: string) {
+export async function createActivity(userId: number, type: string, bookId?: number, comment?: string) {
     return prisma.activity.create({
         data: {
             userId,

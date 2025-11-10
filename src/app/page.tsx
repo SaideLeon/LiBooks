@@ -12,6 +12,7 @@ import SettingsScreen from '@/screens/SettingsScreen';
 import CommunityScreen from '@/screens/CommunityScreen';
 import FollowingScreen from '@/screens/FollowingScreen';
 import NewPublicationScreen from '@/screens/NewPublicationScreen';
+import NewBookScreen from '@/screens/NewBookScreen';
 import CommentsScreen from '@/screens/CommentsScreen';
 import BottomNav from '@/components/BottomNav';
 import SideNav from '@/components/SideNav';
@@ -115,6 +116,8 @@ export default function Home() {
         return <FollowingScreen goBack={goBack} navigate={navigate} />;
       case 'newPublication':
         return <NewPublicationScreen goBack={goBack} currentUser={currentUser} />;
+      case 'newBook':
+        return <NewBookScreen goBack={goBack} navigate={navigate} />;
       case 'comments':
         return <CommentsScreen goBack={goBack} navigate={navigate} post={currentNavigationState.params.post} currentUser={currentUser} />;
       default:

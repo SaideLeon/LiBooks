@@ -2,6 +2,8 @@
 'use client';
 import React from 'react';
 import { User } from '@/lib/prisma/definitions';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from './ui/button';
 
 type Screen = 'home' | 'search' | 'library' | 'profile' | 'community' | 'settings';
 
@@ -73,10 +75,25 @@ const SideNav: React.FC<SideNavProps> = ({ activeTab, changeTab, navigate, curre
                 </div>
             </button>
 
-             <button onClick={() => navigate('newPublication')} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-sm transition-colors hover:bg-primary/90">
-                <span className="material-symbols-outlined">add</span>
-                <span>Nova Publicação</span>
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-sm transition-colors hover:bg-primary/90">
+                  <span className="material-symbols-outlined">add</span>
+                  <span>Novo</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 mb-2">
+                <DropdownMenuItem onClick={() => navigate('newPublication')}>
+                  <span className="material-symbols-outlined mr-2">edit_note</span>
+                  <span>Nova Publicação</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('newBook')}>
+                   <span className="material-symbols-outlined mr-2">book</span>
+                  <span>Publicar Livro</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <NavItem
                 label="Ajustes"
                 icon="settings"
