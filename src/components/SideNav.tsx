@@ -66,15 +66,20 @@ const SideNav: React.FC<SideNavProps> = ({ activeTab, changeTab, navigate, curre
             />
             ))}
         </nav>
-        <div className="mt-auto space-y-2">
-            <button onClick={() => changeTab('profile')} className="flex w-full items-center gap-3 rounded-lg p-3 transition-colors hover:bg-zinc-500/10">
+        <div className="mt-auto flex flex-col space-y-2">
+             <button onClick={() => changeTab('profile')} className="flex w-full items-center gap-3 rounded-lg p-3 transition-colors hover:bg-zinc-500/10">
                 <img src={currentUser.avatarUrl ?? `https://i.pravatar.cc/150?u=${currentUser.email}`} alt="User Avatar" className="size-10 rounded-full" />
                 <div className='text-left'>
                     <p className="font-semibold text-text-light dark:text-text-dark">{currentUser.name}</p>
                     <p className="text-xs text-text-muted-light dark:text-text-muted-dark">Ver Perfil</p>
                 </div>
             </button>
-
+             <NavItem
+                label="Ajustes"
+                icon="settings"
+                isActive={activeTab === 'settings'}
+                onClick={() => changeTab('settings')}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-white shadow-sm transition-colors hover:bg-primary/90">
@@ -93,13 +98,6 @@ const SideNav: React.FC<SideNavProps> = ({ activeTab, changeTab, navigate, curre
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <NavItem
-                label="Ajustes"
-                icon="settings"
-                isActive={activeTab === 'settings'}
-                onClick={() => changeTab('settings')}
-            />
         </div>
     </div>
   );
