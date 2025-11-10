@@ -1,3 +1,5 @@
+import { WelcomeWindow } from "@/components/welcome-window";
+
 export default function Home() {
-  return <></>;
+  return <WelcomeWindow />;
 }
