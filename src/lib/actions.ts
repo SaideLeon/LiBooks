@@ -1,17 +1,11 @@
 
 'use server';
 import { PrismaClient } from '@prisma/client';
-import type { User, Comment, Book, CommunityPost, Follow, Chapter } from '@prisma/client';
+import type { User, Comment, Book, CommunityPost, Follow, Chapter, Bookmark as PrismaBookmark, ReadingProgress as PrismaReadingProgress } from '@prisma/client';
 
 import bcrypt from 'bcryptjs';
-import { ReadingProgress, Bookmark } from '../lib/definitions';
 
-export const prisma = new PrismaClient();
-
-// Re-export types for client-side usage
-export type { User, Comment, Book, CommunityPost, Chapter, Follow } from '@prisma/client';
-export type { ReadingProgress, Bookmark } from '../lib/definitions';
-
+const prisma = new PrismaClient();
 
 export const login = async (email: string, password: string): Promise<User | null> => {
   try {
@@ -182,15 +176,15 @@ export const getIsFollowing = async (currentUserId: number, targetUserId: number
 
 // --- Reading Progress Actions ---
 
-export async function saveReadingProgress(userId: number, bookId: number, chapterId: number, paragraphIndex: number) {
-  await prisma.readingProgress.upsert({
+export async function saveReadingProgress(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<PrismaReadingProgress> {
+  return prisma.readingProgress.upsert({
     where: { userId_bookId: { userId, bookId } },
     update: { chapterId, paragraphIndex },
     create: { userId, bookId, chapterId, paragraphIndex },
   });
 }
 
-export async function getReadingProgress(userId: number, bookId: number) {
+export async function getReadingProgress(userId: number, bookId: number): Promise<PrismaReadingProgress | null> {
   return prisma.readingProgress.findUnique({
     where: { userId_bookId: { userId, bookId } },
   });
@@ -219,35 +213,42 @@ export async function getAllBookmarks(userId: number) {
   });
 }
 
-export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string) {
+export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string): Promise<PrismaBookmark> {
   return prisma.bookmark.create({
     data: { userId, bookId, chapterId, paragraphIndex, text },
   });
 }
 
-export async function removeBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number) {
+export async function removeBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<PrismaBookmark> {
+  // This needs a unique identifier to delete. Let's find it first.
+  const bookmark = await prisma.bookmark.findFirst({
+      where: {
+          userId,
+          bookId,
+          chapterId,
+          paragraphIndex
+      }
+  });
+
+  if (!bookmark) {
+      throw new Error("Bookmark not found");
+  }
+
   return prisma.bookmark.delete({
     where: {
-      userId_bookId_chapterId_paragraphIndex: {
-        userId,
-        bookId,
-        chapterId,
-        paragraphIndex,
-      },
+      id: bookmark.id
     },
   });
 }
 
 export async function isBookmarked(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<boolean> {
-  const bookmark = await prisma.bookmark.findUnique({
+  const bookmark = await prisma.bookmark.findFirst({
     where: {
-      userId_bookId_chapterId_paragraphIndex: {
         userId,
         bookId,
         chapterId,
-        paragraphIndex,
+        paragraphIndex
       },
-    },
   });
   return !!bookmark;
 }
