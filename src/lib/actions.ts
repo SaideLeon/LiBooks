@@ -1,14 +1,14 @@
 
 'use server';
-import { PrismaClient, User, Comment, Book, CommunityPost, Activity, Follow } from '@prisma/client';
+import { PrismaClient, User, Comment, Book, CommunityPost, Activity, Follow, Chapter } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { ReadingProgress, Bookmark } from './definitions';
+import { ReadingProgress, Bookmark } from '../lib/definitions';
 
 export const prisma = new PrismaClient();
 
 // Re-export types for client-side usage
-export type { User, Comment, Book, CommunityPost, Activity, Chapter } from '@prisma/client';
-export type { ReadingProgress, Bookmark } from './definitions';
+export type { User, Comment, Book, CommunityPost, Activity, Chapter, Follow } from '@prisma/client';
+export type { ReadingProgress, Bookmark } from '../lib/definitions';
 
 
 export const login = async (email: string, password: string): Promise<User | null> => {
@@ -71,7 +71,11 @@ export const addComment = async (postId: number, userId: number, text: string) =
 };
 
 export const getBooks = async (): Promise<Book[]> => {
-  return prisma.book.findMany();
+  return prisma.book.findMany({
+    include: {
+        chapters: true,
+    }
+  });
 };
 
 export const getBookById = async (id: number) => {
@@ -106,8 +110,6 @@ export const createPublication = async (data: { authorId: number, content: strin
             bookVerse: data.verses.join(', '),
             imageUrl: data.image,
             quote: '', // Quote might need to be fetched or added manually
-            isLiked: false,
-            isFollowing: false, // This needs user-specific context
             likes: 0,
         }
     });

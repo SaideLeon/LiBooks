@@ -1,4 +1,4 @@
- {
+{
   "name": "litbook-next",
   "version": "0.1.0",
   "private": true,
@@ -10,7 +10,8 @@
     "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
-    "@prisma/client": "^5.15.0",
+    "@google/generative-ai": "^0.11.3",
+    "@prisma/client": "^6.19.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
     "bcryptjs": "^2.4.3",
@@ -18,13 +19,12 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.383.0",
+    "marked": "^12.0.2",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.3.0",
-    "tailwindcss-animate": "^1.0.7",
-    "@google/generative-ai": "^0.11.3",
-    "marked": "^12.0.2"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -34,7 +34,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
     "postcss": "^8",
-    "prisma": "^5.15.0",
+    "prisma": "^6.19.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

@@ -34,7 +34,7 @@ const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => (
             </button>
             <button className="flex items-center gap-1.5 text-text-muted-light transition-colors hover:text-secondary dark:text-text-muted-dark dark:hover:text-secondary">
                 <span className="material-symbols-outlined text-xl">chat_bubble_outline</span>
-                <span className="text-sm">{activity.commentsCount}</span>
+                <span className="text-sm">0</span>
             </button>
             <button className="ml-auto flex items-center gap-1.5 text-text-muted-light transition-colors hover:text-secondary dark:text-text-muted-dark dark:hover:text-secondary">
                 <span className="material-symbols-outlined text-xl">share</span>
