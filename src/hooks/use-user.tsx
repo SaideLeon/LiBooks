@@ -36,7 +36,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       }
       setIsLoading(false);
     };
-    initializeApp();
+    initializeUser();
   }, []);
 
   const login = useCallback((userToLogin: User) => {
