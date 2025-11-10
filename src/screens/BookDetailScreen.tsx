@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Book } from '@/lib/prisma/definitions';
 import { getReadingProgress, ReadingProgress } from '@/lib/actions';
 import { useUser } from '@/hooks/use-user';
+import { Button } from '@/components/ui/button';
 
 interface BookDetailScreenProps {
   book: Book;
@@ -49,6 +50,8 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
   const { user } = useUser();
   const [showChapters, setShowChapters] = useState(false);
   const [progress, setProgress] = useState<ReadingProgress | null>(null);
+
+  const isAuthor = user?.id === book.authorId;
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -101,7 +104,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                 <div className="md:col-span-7 lg:col-span-8">
                     <div className="text-center md:text-left px-6 md:px-0">
                         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100" style={{ textWrap: 'balance' }}>{book.title}</h1>
-                        <p className="mt-1 text-base md:text-lg text-zinc-600 dark:text-zinc-400">{book.author}</p>
+                        <p className="mt-1 text-base md:text-lg text-zinc-600 dark:text-zinc-400">{book.authorName}</p>
                     </div>
                      <div className="hidden md:flex items-center gap-2 mt-4">
                         <button className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-light dark:bg-card-dark/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50">
@@ -110,6 +113,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                         <button className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-light dark:bg-card-dark/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50">
                             <span className="material-symbols-outlined text-2xl">share</span>
                         </button>
+                        {isAuthor && <Button variant="outline">Editar Livro</Button>}
                     </div>
                     <div className="mt-6 w-full px-6 md:px-0">
                         <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -125,6 +129,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                             <span className="material-symbols-outlined">menu_book</span>
                             <span>Ver todos os capítulos</span>
                         </button>
+                         {isAuthor && <div className="md:hidden"><Button variant="outline" className='w-full'>Editar Livro</Button></div>}
                     </div>
                 </div>
             </div>

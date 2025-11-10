@@ -1,127 +1,146 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
-}
-
 model User {
-  id              Int             @id @default(autoincrement())
-  email           String          @unique
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
   password        String
   name            String
   avatarUrl       String?
   bio             String?
-  posts           CommunityPost[] @relation("UserPosts")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  books           Book[]
+  posts           CommunityPost[] @relation("AuthoredPosts")
   comments        Comment[]
+  
   readingProgress ReadingProgress[]
   bookmarks       Bookmark[]
+  
   activities      Activity[]
-  followers       Follow[]        @relation("Following")
-  following       Follow[]        @relation("Follower")
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+
+  // Following/Follower relationships
+  following       Follow[] @relation("Following")
+  followers       Follow[] @relation("Followers")
 }
 
 model Book {
-  id          Int             @id @default(autoincrement())
-  title       String
-  author      String
-  coverUrl    String
-  description String          @db.Text
-  preface     String          @db.Text
-  chapters    Chapter[]
-  bookmarks   Bookmark[]
-  activities  Activity[]
+  id              Int      @id @default(autoincrement())
+  title           String
+  authorName      String
+  coverUrl        String
+  description     String
+  preface         String
+  chapters        Chapter[]
+  
+  author          User     @relation(fields: [authorId], references: [id])
+  authorId        Int
+
   readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
+  activities      Activity[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Chapter {
-  id        Int      @id @default(autoincrement())
-  bookId    Int
-  book      Book     @relation(fields: [bookId], references: [id])
-  title     String
-  subtitle  String?
-  content   String[]
-
-  @@unique([bookId, id])
+  id          Int      @id @default(autoincrement())
+  title       String
+  subtitle    String?
+  content     String[]
+  
+  book        Book     @relation(fields: [bookId], references: [id])
+  bookId      Int
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model CommunityPost {
-  id        Int       @id @default(autoincrement())
-  authorId  Int
-  author    User      @relation("UserPosts", fields: [authorId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  quote     String    @db.Text
-  comment   String    @db.Text
-  bookVerse String
-  imageUrl  String?
-  likes     Int       @default(0)
-  comments  Comment[]
+  id          Int       @id @default(autoincrement())
+  quote       String
+  comment     String
+  bookVerse   String
+  likes       Int       @default(0)
+  imageUrl    String?
+
+  author      User      @relation("AuthoredPosts", fields: [authorId], references: [id])
+  authorId    Int
+  
+  comments    Comment[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Comment {
-  id              Int           @id @default(autoincrement())
-  authorId        Int
-  user            User          @relation(fields: [authorId], references: [id])
-  communityPostId Int
-  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id])
+  id              Int      @id @default(autoincrement())
   text            String
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+
+  user            User      @relation(fields: [authorId], references: [id])
+  authorId        Int
+
+  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id])
+  communityPostId Int
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Follow {
+  follower    User @relation("Following", fields: [followerId], references: [id])
   followerId  Int
+  following   User @relation("Followers", fields: [followingId], references: [id])
   followingId Int
-  follower    User @relation("Follower", fields: [followerId], references: [id])
-  following   User @relation("Following", fields: [followingId], references: [id])
 
   @@id([followerId, followingId])
 }
 
 model ReadingProgress {
   id             Int      @id @default(autoincrement())
+  user           User     @relation(fields: [userId], references: [id])
   userId         Int
+  book           Book     @relation(fields: [bookId], references: [id])
   bookId         Int
   chapterId      Int
   paragraphIndex Int
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  user           User     @relation(fields: [userId], references: [id])
-  book           Book     @relation(fields: [bookId], references: [id])
 
   @@unique([userId, bookId])
 }
 
 model Bookmark {
   id             Int      @id @default(autoincrement())
+  user           User     @relation(fields: [userId], references: [id])
   userId         Int
+  book           Book     @relation(fields: [bookId], references: [id])
   bookId         Int
   chapterId      Int
   paragraphIndex Int
-  text           String   @db.Text
+  text           String
   createdAt      DateTime @default(now())
-  user           User     @relation(fields: [userId], references: [id])
-  book           Book     @relation(fields: [bookId], references: [id])
-
-  @@unique([userId, bookId, chapterId, paragraphIndex])
 }
 
 model Activity {
   id        Int      @id @default(autoincrement())
-  userId    Int
   user      User     @relation(fields: [userId], references: [id])
-  type      String // e.g., 'FINISHED_BOOK', 'ADDED_BOOKMARK', 'STARTED_READING'
-  bookId    Int?
+  userId    Int
+  type      String // e.g., 'FINISHED_BOOK', 'ADDED_BOOKMARK', 'NEW_PUBLICATION'
   book      Book?    @relation(fields: [bookId], references: [id])
-  comment   String?  @db.Text
+  bookId    Int?
+  comment   String?
   createdAt DateTime @default(now())
 }

@@ -1,11 +1,20 @@
 
 'use server';
-import { PrismaClient } from '@prisma/client';
-import type { User, Comment, Book, CommunityPost, Follow, Chapter, Bookmark as PrismaBookmark, ReadingProgress as PrismaReadingProgress } from '@prisma/client';
 
+import { PrismaClient } from '@prisma/client';
+import type { User, Book as PrismaBook, ReadingProgress as PrismaReadingProgress, Bookmark as PrismaBookmark, Activity as PrismaActivity, Follow, CommunityPost as PrismaCommunityPost } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+// Re-export specific types to avoid client-side import of this file
+export type { User, Follow };
+export type ReadingProgress = PrismaReadingProgress;
+export type Bookmark = PrismaBookmark;
+export type Book = PrismaBook;
+export type CommunityPost = PrismaCommunityPost;
+export type Activity = PrismaActivity;
+
 
 export const login = async (email: string, password: string): Promise<User | null> => {
   try {
@@ -66,7 +75,7 @@ export const addComment = async (postId: number, userId: number, text: string) =
     });
 };
 
-export const getBooks = async (): Promise<Book[]> => {
+export const getBooks = async () => {
   return prisma.book.findMany({
     include: {
         chapters: true,
@@ -83,21 +92,23 @@ export const getBookById = async (id: number) => {
 
 export const createBook = async (bookData: {
   title: string;
-  author: string;
+  authorName: string;
   description: string;
   preface: string;
   coverUrl: string;
+  authorId: number;
   chapters: { title: string; subtitle: string; content: string }[];
 }) => {
-  const { title, author, description, preface, coverUrl, chapters } = bookData;
+  const { title, authorName, description, preface, coverUrl, authorId, chapters } = bookData;
 
   return prisma.book.create({
     data: {
       title,
-      author,
+      authorName,
       description,
       preface,
       coverUrl,
+      authorId,
       chapters: {
         create: chapters.map(chapter => ({
           title: chapter.title,

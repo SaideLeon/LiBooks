@@ -34,7 +34,7 @@ const BookCarouselItem: React.FC<{ book: Book; progress?: ReadingProgress; onCli
             </div>
             <div>
                 <p className="truncate text-base font-medium leading-normal text-text-light dark:text-text-dark">{book.title}</p>
-                <p className="truncate text-sm font-normal leading-normal text-text-muted-light dark:text-text-muted-dark">{book.author}</p>
+                <p className="truncate text-sm font-normal leading-normal text-text-muted-light dark:text-text-muted-dark">{book.authorName}</p>
             </div>
         </div>
     );
@@ -55,7 +55,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigate, currentUser }) => {
                 getAllReadingProgress(user.id)
             ]);
             
-            setAllBooks(books);
+            setAllBooks(books as Book[]);
 
             const booksWithProgress = progressRecords.map(progressRecord => ({
                 ...progressRecord.book,

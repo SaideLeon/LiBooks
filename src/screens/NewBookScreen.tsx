@@ -1,7 +1,7 @@
 
 'use client';
 import React, { useState } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { createBook } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
+import { useUser } from '@/hooks/use-user';
 
 interface NewBookScreenProps {
   goBack: () => void;
@@ -17,7 +18,7 @@ interface NewBookScreenProps {
 
 type FormData = {
   title: string;
-  author: string;
+  authorName: string;
   description: string;
   preface: string;
   coverUrl: string;
@@ -29,12 +30,13 @@ type FormData = {
 };
 
 const NewBookScreen: React.FC<NewBookScreenProps> = ({ goBack, navigate }) => {
+  const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { register, control, handleSubmit, formState: { errors } } = useForm<FormData>({
     defaultValues: {
       title: '',
-      author: '',
+      authorName: '',
       description: '',
       preface: '',
       coverUrl: '',
@@ -47,9 +49,17 @@ const NewBookScreen: React.FC<NewBookScreenProps> = ({ goBack, navigate }) => {
   });
 
   const onSubmit = async (data: FormData) => {
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro de autenticação',
+            description: 'Você precisa estar logado para publicar um livro.',
+        });
+        return;
+    }
     setIsSubmitting(true);
     try {
-      const newBook = await createBook(data);
+      const newBook = await createBook({...data, authorId: user.id });
       toast({
         title: 'Livro publicado com sucesso!',
         description: `"${newBook.title}" está agora disponível.`,
@@ -90,9 +100,9 @@ const NewBookScreen: React.FC<NewBookScreenProps> = ({ goBack, navigate }) => {
               {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
             </div>
             <div>
-              <Label htmlFor="author">Autor</Label>
-              <Input id="author" {...register('author', { required: 'Autor é obrigatório' })} />
-              {errors.author && <p className="text-red-500 text-sm mt-1">{errors.author.message}</p>}
+              <Label htmlFor="authorName">Nome do Autor</Label>
+              <Input id="authorName" {...register('authorName', { required: 'Autor é obrigatório' })} />
+              {errors.authorName && <p className="text-red-500 text-sm mt-1">{errors.authorName.message}</p>}
             </div>
             <div>
               <Label htmlFor="coverUrl">URL da Capa</Label>

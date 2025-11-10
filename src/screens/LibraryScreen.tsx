@@ -1,9 +1,11 @@
 
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Book, Bookmark, ReadingProgress, getAllReadingProgress, getAllBookmarks, Chapter } from '@/lib/actions';
+import { Book, Bookmark as PrismaBookmark, ReadingProgress, getAllReadingProgress, getAllBookmarks, Chapter } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
+import type { Book as BookWithChapters } from '@/lib/prisma/definitions';
+
 
 interface LibraryScreenProps {
   navigate: (page: string, params?: any) => void;
@@ -13,9 +15,8 @@ interface BookWithProgress extends Book {
     progress: ReadingProgress;
 }
 
-// Define a new type for the bookmark that we will use in the component state
-type BookmarkWithRelations = Bookmark & { 
-  book: Book & { chapters: Chapter[] };
+type BookmarkWithRelations = PrismaBookmark & { 
+  book: BookWithChapters;
 };
 
 const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
@@ -48,7 +49,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
         fetchLibraryData();
     }, [activeTab, user]);
 
-    const handleBookmarkClick = (bookmark: Bookmark) => {
+    const handleBookmarkClick = (bookmark: PrismaBookmark) => {
         navigate('reader', { 
             bookId: bookmark.bookId, 
             chapterId: bookmark.chapterId,
@@ -112,7 +113,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
                                                 <img src={bookmark.book.coverUrl} alt={bookmark.book.title} className="w-12 h-[72px] object-cover rounded-md" />
                                                 <div>
                                                     <p className="font-bold text-text-light dark:text-text-dark">{bookmark.book.title}</p>
-                                                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">{bookmark.book.author}</p>
+                                                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">{bookmark.book.authorName}</p>
                                                     <p className="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">Cap. {chapter?.id}: {chapter?.title}</p>
                                                 </div>
                                             </div>
