@@ -12,7 +12,7 @@ import SettingsScreen from '@/screens/SettingsScreen';
 import CommunityScreen from '@/screens/CommunityScreen';
 import FollowingScreen from '@/screens/FollowingScreen';
 import NewPublicationScreen from '@/screens/NewPublicationScreen';
-import BookFormScreen from '@/screens/BookFormScreen';
+import BookFormScreen from '@/screens/NewBookScreen';
 import CommentsScreen from '@/screens/CommentsScreen';
 import BottomNav from '@/components/BottomNav';
 import SideNav from '@/components/SideNav';
