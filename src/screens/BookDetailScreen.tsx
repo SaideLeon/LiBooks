@@ -107,7 +107,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                 <div className="md:col-span-7 lg:col-span-8">
                     <div className="text-center md:text-left px-6 md:px-0">
                         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100" style={{ textWrap: 'balance' }}>{book.title}</h1>
-                        <p className="mt-1 text-base md:text-lg text-zinc-600 dark:text-zinc-400">{book.author.name}</p>
+                        <p className="mt-1 text-base md:text-lg text-zinc-600 dark:text-zinc-400">{book.authorName}</p>
                     </div>
                      <div className="hidden md:flex items-center gap-2 mt-4">
                         <button className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-light dark:bg-card-dark/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50">

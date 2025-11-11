@@ -34,7 +34,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigate }) => {
   const filteredBooks = allBooks.filter(
     (book) =>
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.author.name.toLowerCase().includes(searchTerm.toLowerCase())
+      book.authorName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filters = ['Todos', 'Por Título', 'Por Autor', 'Recentes'];
@@ -98,7 +98,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ navigate }) => {
                     {book.title}
                   </p>
                   <p className="text-text-muted-light dark:text-text-muted-dark text-sm font-normal leading-normal">
-                    {book.author.name}
+                    {book.authorName}
                   </p>
                 </div>
               </div>

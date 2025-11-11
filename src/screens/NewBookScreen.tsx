@@ -19,6 +19,7 @@ interface BookFormScreenProps {
 
 type FormData = {
   title: string;
+  authorName: string;
   description: string;
   preface: string;
   coverUrl: string;
@@ -39,6 +40,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
   const { register, control, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     defaultValues: {
       title: '',
+      authorName: '',
       description: '',
       preface: '',
       coverUrl: '',
@@ -50,8 +52,9 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
     if (isEditing && existingBook) {
         reset({
             title: existingBook.title,
+            authorName: existingBook.authorName,
             description: existingBook.description,
-            preface: existingBook.preface,
+            preface: existingBook.preface || '',
             coverUrl: existingBook.coverUrl,
             chapters: existingBook.chapters?.map(c => ({...c, content: Array.isArray(c.content) ? c.content.join('\n') : c.content || ''})) || [{ title: '', subtitle: '', content: '' }],
         });
@@ -127,6 +130,11 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
               <Label htmlFor="title">Título</Label>
               <Input id="title" {...register('title', { required: 'Título é obrigatório' })} />
               {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
+            </div>
+             <div>
+              <Label htmlFor="authorName">Nome do Autor</Label>
+              <Input id="authorName" {...register('authorName', { required: 'Nome do autor é obrigatório' })} />
+              {errors.authorName && <p className="text-red-500 text-sm mt-1">{errors.authorName.message}</p>}
             </div>
             <div>
               <Label htmlFor="coverUrl">URL da Capa</Label>

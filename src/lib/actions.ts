@@ -49,7 +49,16 @@ export const register = async (data: Pick<User, 'name' | 'email' | 'password'|'a
 
 
 export const getUserById = async (id: number): Promise<User | null> => {
-  return prisma.user.findUnique({ where: { id } });
+  return prisma.user.findUnique({
+    where: { id },
+    include: {
+      authoredBooks: true,
+      posts: true,
+      comments: true,
+      followers: true,
+      following: true,
+    },
+  });
 };
 
 export const getCommentsForPost = async (postId: number) => {
@@ -94,10 +103,11 @@ export const createBook = async (bookData: {
   description: string;
   preface: string;
   coverUrl: string;
+  authorName: string;
   authorId: number;
   chapters: { title: string; subtitle: string; content: string }[];
 }) => {
-  const { title, description, preface, coverUrl, authorId, chapters } = bookData;
+  const { title, description, preface, coverUrl, authorName, authorId, chapters } = bookData;
 
   return prisma.book.create({
     data: {
@@ -105,6 +115,7 @@ export const createBook = async (bookData: {
       description,
       preface,
       coverUrl,
+      authorName,
       authorId,
       chapters: {
         create: chapters.map(chapter => ({
