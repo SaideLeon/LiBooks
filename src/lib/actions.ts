@@ -144,12 +144,18 @@ export const createBook = async (bookData: {
     return bookId;
   });
 
-  return db.query.books.findFirst({
+  const newBook = await db.query.books.findFirst({
       where: eq(schema.books.id, newBookId),
       with: {
           chapters: true,
       }
   });
+
+  if (!newBook) {
+      throw new Error("Could not find the newly created book");
+  }
+  
+  return newBook;
 };
 
 export const getCommunityPosts = async () => {
@@ -244,7 +250,7 @@ export async function saveReadingProgress(userId: number, bookId: number, chapte
     .values({ userId, bookId, chapterId, paragraphIndex })
     .onConflictDoUpdate({
       target: [schema.readingProgress.userId, schema.readingProgress.bookId],
-      set: { chapterId, paragraphIndex },
+      set: { chapterId, paragraphIndex, updatedAt: new Date() },
     })
     .returning();
   return result[0];
