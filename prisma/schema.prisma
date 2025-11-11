@@ -1,59 +1,53 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider = "prisma-client-js"
+}
+
 model User {
-  id              Int      @id @default(autoincrement())
-  email           String   @unique
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
   name            String
   password        String
   avatarUrl       String?
   bio             String?
-  authoredBooks   Book[]   @relation("AuthoredBooks")
-  authoredPosts   CommunityPost[] @relation("AuthoredPosts")
-  authoredComments Comment[] @relation("AuthoredComments")
-  activities      Activity[]
+  books           Book[]
+  posts           CommunityPost[]
+  comments        Comment[]
+  followers       Follow[]          @relation("Followers")
+  following       Follow[]          @relation("Following")
   readingProgress ReadingProgress[]
   bookmarks       Bookmark[]
-  followers       Follow[] @relation("Following")
-  following       Follow[] @relation("Followers")
-
-  @@map("users")
+  activities      Activity[]
 }
 
 model Book {
-  id              Int      @id @default(autoincrement())
+  id              Int               @id @default(autoincrement())
   title           String
   description     String
   preface         String
   coverUrl        String
+  author          User              @relation(fields: [authorId], references: [id])
   authorId        Int
-  author          User     @relation("AuthoredBooks", fields: [authorId], references: [id])
   chapters        Chapter[]
-  activities      Activity[]
   readingProgress ReadingProgress[]
   bookmarks       Bookmark[]
-
-  @@map("books")
+  activities      Activity[]
 }
 
 model Chapter {
-  id         Int      @id @default(autoincrement())
-  title      String
-  subtitle   String
-  content    String[]
-  bookId     Int
-  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-
-  @@map("chapters")
+  id        Int      @id @default(autoincrement())
+  title     String
+  subtitle  String
+  content   String[] @Unsupported("text")
+  book      Book     @relation(fields: [bookId], references: [id])
+  bookId    Int
 }
 
 model CommunityPost {
@@ -62,74 +56,64 @@ model CommunityPost {
   quote       String
   comment     String
   bookVerse   String
-  likes       Int
   imageUrl    String?
+  likes       Int       @default(0)
+  author      User      @relation(fields: [authorId], references: [id])
   authorId    Int
-  author      User      @relation("AuthoredPosts", fields: [authorId], references: [id])
   comments    Comment[]
-
-  @@map("community_posts")
 }
 
 model Comment {
-  id              Int      @id @default(autoincrement())
-  createdAt       DateTime @default(now())
+  id              Int           @id @default(autoincrement())
+  createdAt       DateTime      @default(now())
   text            String
+  author          User          @relation(fields: [authorId], references: [id])
   authorId        Int
-  author          User     @relation("AuthoredComments", fields: [authorId], references: [id])
+  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id])
   communityPostId Int
-  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
-
-  @@map("comments")
 }
 
-model Activity {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  type      String
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  bookId    Int?
-  book      Book?    @relation(fields: [bookId], references: [id])
-  comment   String?
+model Follow {
+  follower    User @relation("Followers", fields: [followerId], references: [id])
+  followerId  Int
+  following   User @relation("Following", fields: [followingId], references: [id])
+  followingId Int
 
-  @@map("activities")
+  @@id([followerId, followingId])
 }
 
 model ReadingProgress {
   id             Int      @id @default(autoincrement())
-  updatedAt      DateTime @updatedAt
-  userId         Int
   user           User     @relation(fields: [userId], references: [id])
-  bookId         Int
+  userId         Int
   book           Book     @relation(fields: [bookId], references: [id])
+  bookId         Int
   chapterId      Int
   paragraphIndex Int
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, bookId])
-  @@map("reading_progress")
 }
 
 model Bookmark {
   id             Int      @id @default(autoincrement())
-  createdAt      DateTime @default(now())
-  userId         Int
   user           User     @relation(fields: [userId], references: [id])
-  bookId         Int
+  userId         Int
   book           Book     @relation(fields: [bookId], references: [id])
+  bookId         Int
   chapterId      Int
   paragraphIndex Int
   text           String
-
-  @@map("bookmarks")
+  createdAt      DateTime @default(now())
 }
 
-model Follow {
-  followerId  Int
-  followingId Int
-  follower    User @relation("Followers", fields: [followerId], references: [id])
-  following   User @relation("Following", fields: [followingId], references: [id])
-
-  @@id([followerId, followingId])
-  @@map("follows")
+model Activity {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  type      String // e.g., "FINISHED_BOOK", "ADDED_BOOKMARK", "NEW_PUBLICATION"
+  book      Book?    @relation(fields: [bookId], references: [id])
+  bookId    Int?
+  comment   String?
+  createdAt DateTime @default(now())
 }
