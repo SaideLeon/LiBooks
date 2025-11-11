@@ -92,19 +92,22 @@ export const getBookById = async (id: number) => {
 
 export const createBook = async (bookData: {
   title: string;
-  author: string;
   description: string;
   preface: string;
   coverUrl: string;
   authorId: number;
   chapters: { title: string; subtitle: string; content: string }[];
 }) => {
-  const { title, author, description, preface, coverUrl, authorId, chapters } = bookData;
+  const { title, description, preface, coverUrl, authorId, chapters } = bookData;
+
+  const author = await prisma.user.findUnique({ where: { id: authorId }});
+  if (!author) {
+    throw new Error("Author not found");
+  }
 
   return prisma.book.create({
     data: {
       title,
-      author,
       description,
       preface,
       coverUrl,
