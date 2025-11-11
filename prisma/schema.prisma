@@ -1,41 +1,48 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id              Int               @id @default(autoincrement())
-  email           String            @unique
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
   name            String
   password        String
   avatarUrl       String?
   bio             String?
-  books           Book[]
-  posts           CommunityPost[]
-  comments        Comment[]
-  followers       Follow[]          @relation("Followers")
-  following       Follow[]          @relation("Following")
-  readingProgress ReadingProgress[]
-  bookmarks       Bookmark[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  authoredBooks    Book[]             @relation("AuthoredBooks")
+  authoredPosts    CommunityPost[]    @relation("AuthoredPosts")
+  authoredComments Comment[]          @relation("AuthoredComments")
+  readingProgress  ReadingProgress[]
+  bookmarks        Bookmark[]
+  
+  followers       Follow[]           @relation("Following")
+  following       Follow[]           @relation("Followers")
   activities      Activity[]
 }
 
 model Book {
-  id              Int               @id @default(autoincrement())
-  title           String
-  description     String
-  preface         String
-  coverUrl        String
-  author          User              @relation(fields: [authorId], references: [id])
-  authorId        Int
-  chapters        Chapter[]
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  preface     String
+  coverUrl    String
+  authorId    Int
+  author      User     @relation("AuthoredBooks", fields: [authorId], references: [id])
+  chapters    Chapter[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
   readingProgress ReadingProgress[]
   bookmarks       Bookmark[]
   activities      Activity[]
@@ -44,52 +51,60 @@ model Book {
 model Chapter {
   id        Int      @id @default(autoincrement())
   title     String
-  subtitle  String
-  content   String[] @Unsupported("text")
-  book      Book     @relation(fields: [bookId], references: [id])
+  subtitle  String?
+  content   String[]
   bookId    Int
+  book      Book     @relation(fields: [bookId], references: [id])
+  createdAt DateTime @default(now())
+  
+  readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
 }
 
 model CommunityPost {
   id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
   quote       String
   comment     String
   bookVerse   String
   imageUrl    String?
   likes       Int       @default(0)
-  author      User      @relation(fields: [authorId], references: [id])
   authorId    Int
+  author      User      @relation("AuthoredPosts", fields: [authorId], references: [id])
   comments    Comment[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Comment {
   id              Int           @id @default(autoincrement())
-  createdAt       DateTime      @default(now())
   text            String
-  author          User          @relation(fields: [authorId], references: [id])
   authorId        Int
-  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id])
+  author          User          @relation("AuthoredComments", fields: [authorId], references: [id])
   communityPostId Int
+  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Follow {
-  follower    User @relation("Followers", fields: [followerId], references: [id])
   followerId  Int
-  following   User @relation("Following", fields: [followingId], references: [id])
   followingId Int
+  follower    User @relation("Followers", fields: [followerId], references: [id])
+  following   User @relation("Following", fields: [followingId], references: [id])
 
   @@id([followerId, followingId])
 }
 
 model ReadingProgress {
   id             Int      @id @default(autoincrement())
-  user           User     @relation(fields: [userId], references: [id])
   userId         Int
-  book           Book     @relation(fields: [bookId], references: [id])
   bookId         Int
   chapterId      Int
   paragraphIndex Int
+  user           User     @relation(fields: [userId], references: [id])
+  book           Book     @relation(fields: [bookId], references: [id])
+  chapter        Chapter  @relation(fields: [chapterId], references: [id])
+  createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@unique([userId, bookId])
@@ -97,23 +112,24 @@ model ReadingProgress {
 
 model Bookmark {
   id             Int      @id @default(autoincrement())
-  user           User     @relation(fields: [userId], references: [id])
   userId         Int
-  book           Book     @relation(fields: [bookId], references: [id])
   bookId         Int
   chapterId      Int
   paragraphIndex Int
   text           String
+  user           User     @relation(fields: [userId], references: [id])
+  book           Book     @relation(fields: [bookId], references: [id])
+  chapter        Chapter  @relation(fields: [chapterId], references: [id])
   createdAt      DateTime @default(now())
 }
 
 model Activity {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+  type      String // e.g., 'FINISHED_BOOK', 'ADDED_BOOKMARK'
   userId    Int
-  type      String // e.g., "FINISHED_BOOK", "ADDED_BOOKMARK", "NEW_PUBLICATION"
-  book      Book?    @relation(fields: [bookId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   bookId    Int?
+  book      Book?    @relation(fields: [bookId], references: [id])
   comment   String?
   createdAt DateTime @default(now())
 }
