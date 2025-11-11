@@ -55,7 +55,7 @@ export const getUserById = async (id: number): Promise<User | null> => {
 export const getCommentsForPost = async (postId: number) => {
     return prisma.comment.findMany({
         where: { communityPostId: postId },
-        include: { user: true },
+        include: { author: true },
         orderBy: { createdAt: 'desc' },
     });
 };
@@ -68,7 +68,7 @@ export const addComment = async (postId: number, userId: number, text: string) =
         communityPostId: postId,
         },
         include: {
-        user: true,
+        author: true,
         },
     });
 };

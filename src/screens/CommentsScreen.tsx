@@ -1,9 +1,14 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { CommunityPost, User, Comment } from '@/lib/prisma/definitions';
+import { CommunityPost, User } from '@/lib/prisma/definitions';
 import { getCommentsForPost, addComment } from '@/lib/actions';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import type { Comment as CommentType } from '@prisma/client';
+
+interface CommentWithUser extends CommentType {
+  author: User;
+}
 
 interface CommentsScreenProps {
   goBack: () => void;
@@ -12,12 +17,12 @@ interface CommentsScreenProps {
   currentUser: User;
 }
 
-const CommentCard: React.FC<{ comment: Comment }> = ({ comment }) => (
+const CommentCard: React.FC<{ comment: CommentWithUser }> = ({ comment }) => (
     <div className="flex w-full flex-row items-start justify-start gap-3 border-b border-zinc-200 p-4 dark:border-zinc-800">
-        <img className="aspect-square w-10 shrink-0 rounded-full object-cover" alt={`Profile picture of ${comment.user.name}`} src={comment.user.avatarUrl!} />
+        <img className="aspect-square w-10 shrink-0 rounded-full object-cover" alt={`Profile picture of ${comment.author.name}`} src={comment.author.avatarUrl!} />
         <div className="flex h-full flex-1 flex-col items-start justify-start">
             <div className="flex w-full flex-row items-baseline justify-start gap-x-2">
-                <p className="text-sm font-bold leading-normal tracking-[0.015em] text-text-light dark:text-text-dark">{comment.user.name}</p>
+                <p className="text-sm font-bold leading-normal tracking-[0.015em] text-text-light dark:text-text-dark">{comment.author.name}</p>
                 <p className="text-xs font-normal leading-normal text-text-muted-light dark:text-text-muted-dark">
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: ptBR })}
                 </p>
@@ -40,13 +45,13 @@ const CommentCard: React.FC<{ comment: Comment }> = ({ comment }) => (
 
 
 const CommentsScreen: React.FC<CommentsScreenProps> = ({ goBack, post, currentUser }) => {
-    const [comments, setComments] = useState<Comment[]>([]);
+    const [comments, setComments] = useState<CommentWithUser[]>([]);
     const [newCommentText, setNewCommentText] = useState('');
 
     useEffect(() => {
         const fetchComments = async () => {
             const fetchedComments = await getCommentsForPost(post.id);
-            setComments(fetchedComments as Comment[]);
+            setComments(fetchedComments as CommentWithUser[]);
         };
         fetchComments();
     }, [post.id]);
@@ -54,7 +59,7 @@ const CommentsScreen: React.FC<CommentsScreenProps> = ({ goBack, post, currentUs
     const handleAddComment = async () => {
         if (newCommentText.trim() === '') return;
         const newComment = await addComment(post.id, currentUser.id, newCommentText.trim());
-        setComments(prev => [newComment as Comment, ...prev]);
+        setComments(prev => [newComment as CommentWithUser, ...prev]);
         setNewCommentText('');
     };
 
