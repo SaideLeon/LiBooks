@@ -92,19 +92,19 @@ export const getBookById = async (id: number) => {
 
 export const createBook = async (bookData: {
   title: string;
-  authorName: string;
+  author: string;
   description: string;
   preface: string;
   coverUrl: string;
   authorId: number;
   chapters: { title: string; subtitle: string; content: string }[];
 }) => {
-  const { title, authorName, description, preface, coverUrl, authorId, chapters } = bookData;
+  const { title, author, description, preface, coverUrl, authorId, chapters } = bookData;
 
   return prisma.book.create({
     data: {
       title,
-      authorName,
+      author,
       description,
       preface,
       coverUrl,

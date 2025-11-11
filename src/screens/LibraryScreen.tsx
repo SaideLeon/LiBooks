@@ -113,7 +113,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
                                                 <img src={bookmark.book.coverUrl} alt={bookmark.book.title} className="w-12 h-[72px] object-cover rounded-md" />
                                                 <div>
                                                     <p className="font-bold text-text-light dark:text-text-dark">{bookmark.book.title}</p>
-                                                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">{bookmark.book.authorName}</p>
+                                                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">{bookmark.book.author}</p>
                                                     <p className="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">Cap. {chapter?.id}: {chapter?.title}</p>
                                                 </div>
                                             </div>
