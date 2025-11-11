@@ -10,6 +10,7 @@ export interface Chapter extends PrismaChapter {};
 
 export interface Book extends PrismaBook {
     chapters?: Chapter[];
+    author: User;
 }
 
 export interface Comment extends PrismaComment {

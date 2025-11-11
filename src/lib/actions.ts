@@ -79,6 +79,7 @@ export const getBooks = async () => {
   return prisma.book.findMany({
     include: {
         chapters: true,
+        author: true,
     }
   });
 };
@@ -86,7 +87,7 @@ export const getBooks = async () => {
 export const getBookById = async (id: number) => {
     return prisma.book.findUnique({
         where: { id },
-        include: { chapters: true },
+        include: { chapters: true, author: true },
     });
 };
 
@@ -99,11 +100,6 @@ export const createBook = async (bookData: {
   chapters: { title: string; subtitle: string; content: string }[];
 }) => {
   const { title, description, preface, coverUrl, authorId, chapters } = bookData;
-
-  const author = await prisma.user.findUnique({ where: { id: authorId }});
-  if (!author) {
-    throw new Error("Author not found");
-  }
 
   return prisma.book.create({
     data: {
@@ -238,7 +234,7 @@ export async function getReadingProgress(userId: number, bookId: number): Promis
 export async function getAllReadingProgress(userId: number) {
   return prisma.readingProgress.findMany({
     where: { userId },
-    include: { book: { include: { chapters: true } } },
+    include: { book: { include: { chapters: true, author: true } } },
     orderBy: { updatedAt: 'desc' },
   });
 }
@@ -251,7 +247,7 @@ export async function getAllBookmarks(userId: number) {
     where: { userId },
     include: { 
         book: {
-            include: { chapters: true }
+            include: { chapters: true, author: true }
         },
     },
     orderBy: { createdAt: 'desc' },
