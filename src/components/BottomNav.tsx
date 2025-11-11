@@ -1,4 +1,3 @@
-
 'use client';
 import React from 'react';
 
@@ -35,8 +34,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab }) => {
     { id: 'search', label: 'Busca', icon: 'search' },
     { id: 'library', label: 'Biblioteca', icon: 'bookmarks' },
     { id: 'community', label: 'Feed', icon: 'forum' },
-    // { id: 'profile', label: 'Perfil', icon: 'person' },
-    // { id: 'settings', label: 'Ajustes', icon: 'settings' },
+    { id: 'profile', label: 'Perfil', icon: 'person' },
   ];
 
   return (

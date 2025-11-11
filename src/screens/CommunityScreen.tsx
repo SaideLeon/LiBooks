@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { CommunityPost, User } from '@/lib/prisma/definitions';
@@ -68,7 +67,7 @@ const CommunityPostCard: React.FC<{ post: CommunityPost, navigate: (page: string
         )}
 
         <div className="px-4 pt-4">
-            <p className="mb-2 text-lg italic text-gray-800 dark:text-gray-200">"{post.quote}"</p>
+            {post.quote && <p className="mb-2 text-lg italic text-gray-800 dark:text-gray-200">"{post.quote}"</p>}
             <p className="mb-4 text-gray-600 dark:text-gray-300">{post.comment}</p>
             <a className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary hover:bg-primary/20" href="#">{post.bookVerse}</a>
         </div>

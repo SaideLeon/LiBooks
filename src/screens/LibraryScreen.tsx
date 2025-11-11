@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Book, Bookmark as PrismaBookmark, ReadingProgress, getAllReadingProgress, getAllBookmarks, Chapter } from '@/lib/actions';
@@ -113,7 +112,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
                                                 <img src={bookmark.book.coverUrl} alt={bookmark.book.title} className="w-12 h-[72px] object-cover rounded-md" />
                                                 <div>
                                                     <p className="font-bold text-text-light dark:text-text-dark">{bookmark.book.title}</p>
-                                                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">{bookmark.book.author}</p>
+                                                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">{bookmark.book.author.name}</p>
                                                     <p className="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">Cap. {chapter?.id}: {chapter?.title}</p>
                                                 </div>
                                             </div>

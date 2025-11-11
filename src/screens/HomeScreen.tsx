@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Book, User, ReadingProgress } from '@/lib/prisma/definitions';

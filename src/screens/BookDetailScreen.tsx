@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Book } from '@/lib/prisma/definitions';
@@ -24,8 +23,8 @@ const ChapterList: React.FC<{ book: Book; navigate: (page: string, params?: any)
                 </div>
                  <div className="flex size-10 shrink-0 items-center justify-center">
                     {isAuthor && (
-                        <Button variant="ghost" size="icon" onClick={() => navigate('editBook', { book })}>
-                            <span className="material-symbols-outlined text-2xl text-text-light dark:text-text-dark">add</span>
+                        <Button variant="ghost" size="icon" onClick={() => navigate('editBook', { bookId: book.id })}>
+                            <span className="material-symbols-outlined text-2xl text-text-light dark:text-text-dark">edit</span>
                         </Button>
                     )}
                  </div>
@@ -33,10 +32,10 @@ const ChapterList: React.FC<{ book: Book; navigate: (page: string, params?: any)
         </header>
         <main className="flex-1">
             <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {book.chapters?.map((chapter) => (
+                {book.chapters?.map((chapter, index) => (
                     <a key={chapter.id} onClick={() => navigate('reader', { bookId: book.id, chapterId: chapter.id })} className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50 cursor-pointer">
                         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-200 dark:bg-zinc-800">
-                            <span className="text-xl font-bold text-zinc-600 dark:text-zinc-400">{chapter.id}</span>
+                            <span className="text-xl font-bold text-zinc-600 dark:text-zinc-400">{index + 1}</span>
                         </div>
                         <div className="flex-1">
                             <h2 className="font-semibold text-zinc-800 dark:text-zinc-200">{chapter.title}</h2>
@@ -117,7 +116,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                         <button className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-light dark:bg-card-dark/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50">
                             <span className="material-symbols-outlined text-2xl">share</span>
                         </button>
-                        {isAuthor && <Button variant="outline" onClick={() => navigate('editBook', { book })}>Editar Livro</Button>}
+                        {isAuthor && <Button variant="outline" onClick={() => navigate('editBook', { bookId: book.id })}>Editar Livro</Button>}
                     </div>
                     <div className="mt-6 w-full px-6 md:px-0">
                         <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -133,7 +132,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                             <span className="material-symbols-outlined">menu_book</span>
                             <span>Ver todos os capítulos</span>
                         </button>
-                         {isAuthor && <div className="md:hidden"><Button variant="outline" className='w-full' onClick={() => navigate('editBook', { book })}>Editar Livro</Button></div>}
+                         {isAuthor && <div className="md:hidden"><Button variant="outline" className='w-full' onClick={() => navigate('editBook', { bookId: book.id })}>Editar Livro</Button></div>}
                     </div>
                 </div>
             </div>

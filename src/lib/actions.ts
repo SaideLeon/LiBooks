@@ -1,4 +1,3 @@
-
 'use server';
 
 import { PrismaClient } from '@prisma/client';
@@ -7,7 +6,6 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// Re-export specific types to avoid client-side import of this file
 export type { User, Follow };
 export type ReadingProgress = PrismaReadingProgress;
 export type Bookmark = PrismaBookmark;

@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { CommunityPost, User, Comment } from '@/lib/prisma/definitions';
@@ -47,7 +46,7 @@ const CommentsScreen: React.FC<CommentsScreenProps> = ({ goBack, post, currentUs
     useEffect(() => {
         const fetchComments = async () => {
             const fetchedComments = await getCommentsForPost(post.id);
-            setComments(fetchedComments);
+            setComments(fetchedComments as Comment[]);
         };
         fetchComments();
     }, [post.id]);
@@ -55,7 +54,7 @@ const CommentsScreen: React.FC<CommentsScreenProps> = ({ goBack, post, currentUs
     const handleAddComment = async () => {
         if (newCommentText.trim() === '') return;
         const newComment = await addComment(post.id, currentUser.id, newCommentText.trim());
-        setComments(prev => [newComment, ...prev]);
+        setComments(prev => [newComment as Comment, ...prev]);
         setNewCommentText('');
     };
 

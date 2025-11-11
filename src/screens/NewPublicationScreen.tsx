@@ -1,11 +1,10 @@
-
 'use client';
 import React, { useState } from 'react';
 import VerseSearchModal from '../components/VerseSearchModal';
 import { createPublication } from '@/lib/actions';
 import { User } from '@/lib/prisma/definitions';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { Spinner } from '@/components/Spinner';
 
 interface NewPublicationScreenProps {
   goBack: () => void;
@@ -83,7 +82,7 @@ const NewPublicationScreen: React.FC<NewPublicationScreenProps> = ({ goBack, cur
         </button>
         <h1 className="flex-1 text-center text-lg font-bold">Nova Publicação</h1>
         <button onClick={handlePublish} disabled={isSubmitting} className="flex h-10 w-auto items-center justify-center px-4 rounded-full bg-primary text-white disabled:opacity-50">
-          <p className="text-base font-bold">{isSubmitting ? 'Publicando...' : 'Publicar'}</p>
+          <p className="text-base font-bold">{isSubmitting ? <Spinner /> : 'Publicar'}</p>
         </button>
       </header>
       

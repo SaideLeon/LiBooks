@@ -1,12 +1,22 @@
-
 'use client';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Book, User } from '@/lib/prisma/definitions';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from 'marked';
 import { saveReadingProgress, addBookmark, removeBookmark, isBookmarked, createActivity } from '@/lib/actions';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/hooks/use-user';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface ReaderScreenProps {
   book: Book;
@@ -50,17 +60,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
   const [isCurrentParagraphBookmarked, setIsCurrentParagraphBookmarked] = useState(false);
   const paragraphRefs = useRef<(HTMLDivElement | null)[]>([]);
   const { toast } = useToast();
-  const genAI = useRef<GoogleGenerativeAI | null>(null);
-
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (apiKey) {
-      genAI.current = new GoogleGenerativeAI(apiKey);
-    } else {
-      console.error("Gemini API key not found");
-    }
-  }, []);
-
+  
   useEffect(() => {
     if (paragraph && paragraphRefs.current[paragraph - 1]) {
         setTimeout(() => {
@@ -89,7 +89,8 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
   }, [selectedParagraph, book.id, currentChapter, currentUser, checkBookmarkStatus]);
 
   const generateAnnotation = useCallback(async (paragraphText: string, paragraphIndex: number) => {
-    if (!genAI.current) {
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
         toast({
             variant: "destructive",
             title: "AI não configurada",
@@ -99,7 +100,8 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
     }
     setLoadingAnnotation(paragraphIndex);
     try {
-      const model = genAI.current.getGenerativeModel({ model: "gemini-pro" });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       const prompt = `Explique o seguinte versículo ou passagem em um tom reflexivo e perspicaz, como se fosse uma anotação pessoal em um livro. Use Markdown para formatar a resposta com cabeçalhos, listas ou negrito, se apropriado, para melhor clareza e organização.: "${paragraphText}"`;
       
       const result = await model.generateContent(prompt);
@@ -166,9 +168,29 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
             <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{book.title}</h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">Capítulo {currentChapter.id}</p>
         </div>
-        <button className="flex size-10 items-center justify-center rounded-full">
-            <span className="material-symbols-outlined text-2xl">more_vert</span>
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="flex size-10 items-center justify-center rounded-full">
+                <span className="material-symbols-outlined text-2xl">menu_book</span>
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Capítulos</AlertDialogTitle>
+              <AlertDialogDescription>
+                Selecione um capítulo para navegar.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="max-h-60 overflow-y-auto">
+              {book.chapters?.map(chap => (
+                <a key={chap.id} href={`#`} className="block p-2 rounded-md hover:bg-accent">{chap.title}</a>
+              ))}
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </header>
 
       <main className="flex-1 overflow-y-auto px-6 pt-4 pb-20">

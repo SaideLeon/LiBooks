@@ -1,6 +1,6 @@
-
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useUser } from '@/hooks/use-user';
 
 const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
   <h2 className="px-4 pb-2 text-sm font-semibold uppercase text-text-muted-light dark:text-text-muted-dark tracking-wider">
@@ -103,11 +103,8 @@ const ThemeSwitcher: React.FC = () => {
     );
 };
 
-interface SettingsScreenProps {
-    onLogout: () => void;
-}
-
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout }) => {
+const SettingsScreen: React.FC = () => {
+    const { logout } = useUser();
     const [dailyReminder, setDailyReminder] = useState(true);
     const [newsUpdates, setNewsUpdates] = useState(false);
 
@@ -142,7 +139,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout }) => {
                     <section>
                         <SectionHeader title="Conta" />
                         <div className="overflow-hidden rounded-xl bg-card-light dark:bg-card-dark shadow-sm divide-y divide-zinc-200 dark:divide-zinc-800">
-                            <SettingsItem icon="logout" title="Sair" isButton isDestructive onClick={onLogout} />
+                            <SettingsItem icon="logout" title="Sair" isButton isDestructive onClick={logout} />
                         </div>
                     </section>
 
