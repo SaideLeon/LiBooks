@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_NON_POOLING")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  name            String
+  email           String            @unique
+  password        String
+  bio             String?
+  avatarUrl       String?           @map("avatar_url")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  authoredBooks   Book[]
+  posts           CommunityPost[]
+  comments        Comment[]
+  followers       Follow[]          @relation("Followers")
+  following       Follow[]          @relation("Following")
+  readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
+  activities      Activity[]
+}
+
+model Book {
+  id           Int               @id @default(autoincrement())
+  title        String
+  description  String
+  coverUrl     String            @map("cover_url")
+  authorId     Int               @map("author_id")
+  authorName   String            @map("author_name")
+  preface      String?
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  author       User              @relation(fields: [authorId], references: [id])
+  chapters     Chapter[]
+  readingProgress ReadingProgress[]
+  bookmarks    Bookmark[]
+  activities   Activity[]
+}
+
+model Chapter {
+  id        Int      @id @default(autoincrement())
+  bookId    Int      @map("book_id")
+  title     String
+  subtitle  String?
+  content   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  book      Book     @relation(fields: [bookId], references: [id])
+}
+
+model CommunityPost {
+  id            Int       @id @default(autoincrement())
+  authorId      Int       @map("author_id")
+  comment       String
+  bookVerse     String?   @map("book_verse")
+  quote         String?
+  likes         Int       @default(0)
+  imageUrl      String?   @map("image_url")
+  isLiked       Boolean   @default(false) @map("is_liked")
+  commentsCount Int       @default(0) @map("comments_count")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  author        User      @relation(fields: [authorId], references: [id])
+  comments      Comment[]
+}
+
+model Comment {
+  id              Int      @id @default(autoincrement())
+  text            String
+  authorId        Int      @map("author_id")
+  communityPostId Int?     @map("community_post_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  author          User     @relation(fields: [authorId], references: [id])
+  post            CommunityPost? @relation(fields: [communityPostId], references: [id])
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int      @map("follower_id")
+  followingId Int      @map("following_id")
+  follower    User     @relation("Followers", fields: [followerId], references: [id])
+  following   User     @relation("Following", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
+
+model ReadingProgress {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  bookId         Int      @map("book_id")
+  chapterId      Int      @map("chapter_id")
+  paragraphIndex Int      @map("paragraph_index")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  user           User     @relation(fields: [userId], references: [id])
+  book           Book     @relation(fields: [bookId], references: [id])
+
+  @@unique([userId, bookId])
+}
+
+model Bookmark {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  bookId         Int      @map("book_id")
+  chapterId      Int      @map("chapter_id")
+  paragraphIndex Int      @map("paragraph_index")
+  text           String
+  createdAt      DateTime @default(now()) @map("created_at")
+  user           User     @relation(fields: [userId], references: [id])
+  book           Book     @relation(fields: [bookId], references: [id])
+}
+
+model Activity {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String
+  bookId    Int?     @map("book_id")
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+  book      Book?    @relation(fields: [bookId], references: [id])
+}
