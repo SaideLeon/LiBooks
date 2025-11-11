@@ -1,10 +1,9 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { CommunityPost, User } from '@/lib/prisma/definitions';
 import { getCommentsForPost, addComment } from '@/lib/actions';
+import type { CommunityPost, User, Comment as CommentType } from '@/lib/actions';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { Comment as CommentType } from '@prisma/client';
 
 interface CommentWithUser extends CommentType {
   author: User;

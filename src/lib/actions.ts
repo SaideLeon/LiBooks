@@ -1,22 +1,35 @@
 'use server';
 
-import { PrismaClient } from '@prisma/client';
-import type { User, Book as PrismaBook, ReadingProgress as PrismaReadingProgress, Bookmark as PrismaBookmark, Activity as PrismaActivity, Follow, CommunityPost as PrismaCommunityPost } from '@prisma/client';
+import { db } from '@/lib/db';
+import * as schema from '@/lib/db/schema';
+import { and, eq, desc } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
-
-export type { User, Follow };
-export type ReadingProgress = PrismaReadingProgress;
-export type Bookmark = PrismaBookmark;
-export type Book = PrismaBook;
-export type CommunityPost = PrismaCommunityPost;
-export type Activity = PrismaActivity;
+export type User = typeof schema.users.$inferSelect;
+export type NewUser = typeof schema.users.$inferInsert;
+export type Book = typeof schema.books.$inferSelect;
+export type NewBook = typeof schema.books.$inferInsert;
+export type Chapter = typeof schema.chapters.$inferSelect;
+export type NewChapter = typeof schema.chapters.$inferInsert;
+export type CommunityPost = typeof schema.communityPosts.$inferSelect;
+export type NewCommunityPost = typeof schema.communityPosts.$inferInsert;
+export type Comment = typeof schema.comments.$inferSelect;
+export type NewComment = typeof schema.comments.$inferInsert;
+export type Follow = typeof schema.follows.$inferSelect;
+export type NewFollow = typeof schema.follows.$inferInsert;
+export type ReadingProgress = typeof schema.readingProgress.$inferSelect;
+export type NewReadingProgress = typeof schema.readingProgress.$inferInsert;
+export type Bookmark = typeof schema.bookmarks.$inferSelect;
+export type NewBookmark = typeof schema.bookmarks.$inferInsert;
+export type Activity = typeof schema.activities.$inferSelect;
+export type NewActivity = typeof schema.activities.$inferInsert;
 
 
 export const login = async (email: string, password: string): Promise<User | null> => {
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.email, email),
+    });
     if (!user) {
       return null;
     }
@@ -31,27 +44,25 @@ export const login = async (email: string, password: string): Promise<User | nul
   }
 };
 
-export const register = async (data: Pick<User, 'name' | 'email' | 'password'|'avatarUrl'>): Promise<User> => {
-    const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+export const register = async (data: Pick<NewUser, 'name' | 'email' | 'password' | 'avatarUrl'>): Promise<User> => {
+    const existingUser = await db.query.users.findFirst({ where: eq(schema.users.email, data.email) });
     if (existingUser) {
         throw new Error("User with this email already exists.");
     }
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    const user = await prisma.user.create({
-        data: {
+    const result = await db.insert(schema.users).values({
         ...data,
         password: hashedPassword,
         bio: 'Amante da leitura e da reflexão.',
-        },
-    });
-    return user;
+    }).returning();
+    return result[0];
 };
 
 
-export const getUserById = async (id: number): Promise<User | null> => {
-  return prisma.user.findUnique({
-    where: { id },
-    include: {
+export const getUserById = async (id: number): Promise<(User & { authoredBooks: Book[], posts: CommunityPost[], comments: Comment[], followers: Follow[], following: Follow[] }) | null> => {
+  const user = await db.query.users.findFirst({
+    where: eq(schema.users.id, id),
+    with: {
       authoredBooks: true,
       posts: true,
       comments: true,
@@ -59,32 +70,33 @@ export const getUserById = async (id: number): Promise<User | null> => {
       following: true,
     },
   });
+  return user || null;
 };
 
 export const getCommentsForPost = async (postId: number) => {
-    return prisma.comment.findMany({
-        where: { communityPostId: postId },
-        include: { author: true },
-        orderBy: { createdAt: 'desc' },
+    return db.query.comments.findMany({
+        where: eq(schema.comments.communityPostId, postId),
+        with: { author: true },
+        orderBy: desc(schema.comments.createdAt),
     });
 };
 
 export const addComment = async (postId: number, userId: number, text: string) => {
-    return prisma.comment.create({
-        data: {
+    const newComment = await db.insert(schema.comments).values({
         text,
         authorId: userId,
         communityPostId: postId,
-        },
-        include: {
-        author: true,
-        },
+    }).returning({ id: schema.comments.id });
+
+    return db.query.comments.findFirst({
+        where: eq(schema.comments.id, newComment[0].id),
+        with: { author: true },
     });
 };
 
 export const getBooks = async () => {
-  return prisma.book.findMany({
-    include: {
+  return db.query.books.findMany({
+    with: {
         chapters: true,
         author: true,
     }
@@ -92,9 +104,9 @@ export const getBooks = async () => {
 };
 
 export const getBookById = async (id: number) => {
-    return prisma.book.findUnique({
-        where: { id },
-        include: { chapters: true, author: true },
+    return db.query.books.findFirst({
+        where: eq(schema.books.id, id),
+        with: { chapters: true, author: true },
     });
 };
 
@@ -109,102 +121,105 @@ export const createBook = async (bookData: {
 }) => {
   const { title, description, preface, coverUrl, authorName, authorId, chapters } = bookData;
 
-  return prisma.book.create({
-    data: {
+  const newBookId = await db.transaction(async (tx) => {
+    const bookResult = await tx.insert(schema.books).values({
       title,
       description,
       preface,
       coverUrl,
       authorName,
       authorId,
-      chapters: {
-        create: chapters.map(chapter => ({
-          title: chapter.title,
-          subtitle: chapter.subtitle,
-          content: chapter.content.split('\n').filter(p => p.trim() !== ''),
-        })),
-      },
-    },
-    include: {
-      chapters: true,
-    },
+    }).returning({ id: schema.books.id });
+
+    const bookId = bookResult[0].id;
+
+    if (chapters.length > 0) {
+        await tx.insert(schema.chapters).values(chapters.map(chapter => ({
+            ...chapter,
+            content: chapter.content.split('\n').filter(p => p.trim() !== ''),
+            bookId,
+        })));
+    }
+
+    return bookId;
+  });
+
+  return db.query.books.findFirst({
+      where: eq(schema.books.id, newBookId),
+      with: {
+          chapters: true,
+      }
   });
 };
 
 export const getCommunityPosts = async () => {
-    const posts = await prisma.communityPost.findMany({
-        include: { 
-            author: true, 
-            _count: {
-                select: { comments: true }
-            } 
+    const posts = await db.query.communityPosts.findMany({
+        with: { 
+            author: true,
+            comments: {
+                columns: {
+                    id: true
+                }
+            }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: desc(schema.communityPosts.createdAt),
     });
-    // This is a workaround because Prisma can't directly include the count on the relation
+
     return posts.map(post => ({
         ...post,
-        commentsCount: post._count.comments,
+        commentsCount: post.comments.length,
     }));
 };
 
 export const createPublication = async (data: { authorId: number, content: string, verses: string[], image?: string | null }) => {
-    const publication = await prisma.communityPost.create({
-        data: {
-            authorId: data.authorId,
-            comment: data.content,
-            bookVerse: data.verses.join(', '),
-            imageUrl: data.image,
-            quote: '', // Quote might need to be fetched or added manually
-            likes: 0,
-        }
-    });
-    return publication;
+    const result = await db.insert(schema.communityPosts).values({
+        authorId: data.authorId,
+        comment: data.content,
+        bookVerse: data.verses.join(', '),
+        imageUrl: data.image,
+        quote: '', // Quote might need to be fetched or added manually
+        likes: 0,
+    }).returning();
+    return result[0];
 }
 
 
 export const getFollowing = async (userId: number) => {
-    const followingRelations = await prisma.follow.findMany({
-        where: { followerId: userId },
-        include: { following: true }
+    const followingRelations = await db.query.follows.findMany({
+        where: eq(schema.follows.followerId, userId),
+        with: { following: true }
     });
     return followingRelations.map(rel => rel.following);
 }
 
 export const getFollowers = async (userId: number) => {
-    const followerRelations = await prisma.follow.findMany({
-        where: { followingId: userId },
-        include: { follower: true }
+    const followerRelations = await db.query.follows.findMany({
+        where: eq(schema.follows.followingId, userId),
+        with: { follower: true }
     });
     return followerRelations.map(rel => rel.follower);
 }
 
 export const toggleFollow = async (currentUserId: number, targetUserId: number): Promise<boolean> => {
-    const existingFollow = await prisma.follow.findUnique({
-        where: {
-            followerId_followingId: {
-                followerId: currentUserId,
-                followingId: targetUserId,
-            },
-        },
+    const existingFollow = await db.query.follows.findFirst({
+        where: and(
+            eq(schema.follows.followerId, currentUserId),
+            eq(schema.follows.followingId, targetUserId)
+        ),
     });
 
     if (existingFollow) {
-        await prisma.follow.delete({
-            where: {
-                followerId_followingId: {
-                    followerId: currentUserId,
-                    followingId: targetUserId,
-                },
-            },
-        });
+        await db.delete(schema.follows).where(
+            and(
+                eq(schema.follows.followerId, currentUserId),
+                eq(schema.follows.followingId, targetUserId)
+            )
+        );
         return false; // Now not following
     } else {
-        await prisma.follow.create({
-            data: {
-                followerId: currentUserId,
-                followingId: targetUserId,
-            },
+        await db.insert(schema.follows).values({
+            followerId: currentUserId,
+            followingId: targetUserId,
         });
         return true; // Now following
     }
@@ -212,13 +227,11 @@ export const toggleFollow = async (currentUserId: number, targetUserId: number):
 
 export const getIsFollowing = async (currentUserId: number, targetUserId: number): Promise<boolean> => {
     if (currentUserId === targetUserId) return false;
-    const existingFollow = await prisma.follow.findUnique({
-        where: {
-            followerId_followingId: {
-                followerId: currentUserId,
-                followingId: targetUserId,
-            },
-        },
+    const existingFollow = await db.query.follows.findFirst({
+        where: and(
+            eq(schema.follows.followerId, currentUserId),
+            eq(schema.follows.followingId, targetUserId)
+        ),
     });
     return !!existingFollow;
 }
@@ -226,25 +239,32 @@ export const getIsFollowing = async (currentUserId: number, targetUserId: number
 
 // --- Reading Progress Actions ---
 
-export async function saveReadingProgress(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<PrismaReadingProgress> {
-  return prisma.readingProgress.upsert({
-    where: { userId_bookId: { userId, bookId } },
-    update: { chapterId, paragraphIndex },
-    create: { userId, bookId, chapterId, paragraphIndex },
-  });
+export async function saveReadingProgress(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<ReadingProgress> {
+  const result = await db.insert(schema.readingProgress)
+    .values({ userId, bookId, chapterId, paragraphIndex })
+    .onConflictDoUpdate({
+      target: [schema.readingProgress.userId, schema.readingProgress.bookId],
+      set: { chapterId, paragraphIndex },
+    })
+    .returning();
+  return result[0];
 }
 
-export async function getReadingProgress(userId: number, bookId: number): Promise<PrismaReadingProgress | null> {
-  return prisma.readingProgress.findUnique({
-    where: { userId_bookId: { userId, bookId } },
+export async function getReadingProgress(userId: number, bookId: number): Promise<ReadingProgress | null> {
+  const progress = await db.query.readingProgress.findFirst({
+    where: and(
+        eq(schema.readingProgress.userId, userId),
+        eq(schema.readingProgress.bookId, bookId)
+    ),
   });
+  return progress || null;
 }
 
 export async function getAllReadingProgress(userId: number) {
-  return prisma.readingProgress.findMany({
-    where: { userId },
-    include: { book: { include: { chapters: true, author: true } } },
-    orderBy: { updatedAt: 'desc' },
+  return db.query.readingProgress.findMany({
+    where: eq(schema.readingProgress.userId, userId),
+    with: { book: { with: { chapters: true, author: true } } },
+    orderBy: desc(schema.readingProgress.updatedAt),
   });
 }
 
@@ -252,66 +272,61 @@ export async function getAllReadingProgress(userId: number) {
 // --- Bookmark Actions ---
 
 export async function getAllBookmarks(userId: number) {
-  return prisma.bookmark.findMany({
-    where: { userId },
-    include: { 
+  return db.query.bookmarks.findMany({
+    where: eq(schema.bookmarks.userId, userId),
+    with: { 
         book: {
-            include: { chapters: true, author: true }
+            with: { chapters: true, author: true }
         },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: desc(schema.bookmarks.createdAt),
   });
 }
 
-export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string): Promise<PrismaBookmark> {
-  const bookmark = await prisma.bookmark.findFirst({
-      where: {
-          userId,
-          bookId,
-          chapterId,
-          paragraphIndex
-      }
+export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string): Promise<Bookmark> {
+  const bookmark = await db.query.bookmarks.findFirst({
+      where: and(
+          eq(schema.bookmarks.userId, userId),
+          eq(schema.bookmarks.bookId, bookId),
+          eq(schema.bookmarks.chapterId, chapterId),
+          eq(schema.bookmarks.paragraphIndex, paragraphIndex)
+      )
   });
 
   if (bookmark) {
     return bookmark;
   }
 
-  return prisma.bookmark.create({
-    data: { userId, bookId, chapterId, paragraphIndex, text },
-  });
+  const result = await db.insert(schema.bookmarks).values({ userId, bookId, chapterId, paragraphIndex, text }).returning();
+  return result[0];
 }
 
-export async function removeBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<PrismaBookmark> {
-  // This needs a unique identifier to delete. Let's find it first.
-  const bookmark = await prisma.bookmark.findFirst({
-      where: {
-          userId,
-          bookId,
-          chapterId,
-          paragraphIndex
-      }
+export async function removeBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<Bookmark | undefined> {
+  const bookmark = await db.query.bookmarks.findFirst({
+      where: and(
+          eq(schema.bookmarks.userId, userId),
+          eq(schema.bookmarks.bookId, bookId),
+          eq(schema.bookmarks.chapterId, chapterId),
+          eq(schema.bookmarks.paragraphIndex, paragraphIndex)
+      )
   });
 
   if (!bookmark) {
       throw new Error("Bookmark not found");
   }
 
-  return prisma.bookmark.delete({
-    where: {
-      id: bookmark.id
-    },
-  });
+  const result = await db.delete(schema.bookmarks).where(eq(schema.bookmarks.id, bookmark.id)).returning();
+  return result[0];
 }
 
 export async function isBookmarked(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<boolean> {
-  const bookmark = await prisma.bookmark.findFirst({
-    where: {
-        userId,
-        bookId,
-        chapterId,
-        paragraphIndex
-      },
+  const bookmark = await db.query.bookmarks.findFirst({
+    where: and(
+        eq(schema.bookmarks.userId, userId),
+        eq(schema.bookmarks.bookId, bookId),
+        eq(schema.bookmarks.chapterId, chapterId),
+        eq(schema.bookmarks.paragraphIndex, paragraphIndex)
+      ),
   });
   return !!bookmark;
 }
@@ -320,22 +335,21 @@ export async function isBookmarked(userId: number, bookId: number, chapterId: nu
 // --- Activity Actions ---
 
 export async function createActivity(userId: number, type: string, bookId?: number, comment?: string) {
-    return prisma.activity.create({
-        data: {
-            userId,
-            type,
-            bookId,
-            comment,
-        }
-    });
+    const result = await db.insert(schema.activities).values({
+        userId,
+        type,
+        bookId,
+        comment,
+    }).returning();
+    return result[0];
 }
 
 export async function getActivitiesForUser(userId: number) {
     // This could be expanded to get activities for followed users
-    return prisma.activity.findMany({
-        where: { userId },
-        include: { user: true, book: true },
-        orderBy: { createdAt: 'desc' },
-        take: 20
+    return db.query.activities.findMany({
+        where: eq(schema.activities.userId, userId),
+        with: { user: true, book: true },
+        orderBy: desc(schema.activities.createdAt),
+        limit: 20
     });
 }
