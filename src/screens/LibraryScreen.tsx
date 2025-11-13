@@ -18,7 +18,7 @@ interface BookWithProgress extends Book {
 }
 
 type BookmarkWithRelations = PrismaBookmark & { 
-  book: Book & { chapters: Chapter[] };
+  book: Book & { chapters: Chapter[], author: User };
 };
 
 const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {

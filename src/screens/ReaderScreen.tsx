@@ -6,6 +6,7 @@ import { marked } from 'marked';
 import { saveReadingProgress, addBookmark, removeBookmark, isBookmarked, createActivity } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/hooks/use-user';
+import { BookWithChapters } from '@/lib/definitions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 interface ReaderScreenProps {
-  book: Book;
+  book: BookWithChapters;
   chapterId: number;
   paragraph?: number;
   goBack: () => void;

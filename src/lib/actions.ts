@@ -264,19 +264,20 @@ export async function getAllReadingProgress(userId: number): Promise<(ReadingPro
     return progressRecords as (ReadingProgress & { book: Book & { author: User; chapters: Chapter[] } })[];
 }
 
-export async function getAllBookmarks(userId: number): Promise<(Bookmark & { book: Book & { chapters: Chapter[]} })[]> {
+export async function getAllBookmarks(userId: number): Promise<(Bookmark & { book: Book & { chapters: Chapter[], author: User } })[]> {
     const bookmarks = await db.bookmark.findMany({
         where: { userId },
         include: { 
             book: {
                 include: {
-                    chapters: true
+                    chapters: true,
+                    author: true
                 }
             } 
         },
         orderBy: { createdAt: 'desc' }
     });
-    return bookmarks as (Bookmark & { book: Book & { chapters: Chapter[]} })[];
+    return bookmarks as (Bookmark & { book: Book & { chapters: Chapter[], author: User } })[];
 }
 
 export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string): Promise<Bookmark> {
@@ -323,4 +324,3 @@ export async function getActivitiesForUser(userId: number): Promise<Activity[]> 
     });
     return activities;
 }
-
