@@ -200,13 +200,13 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
        <div className="max-w-3xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-zinc-100 text-center">{currentChapter.title}</h2>
         <div className="space-y-6">
-          {currentChapter.content && Array.isArray(currentChapter.content) && currentChapter.content.map((paragraph, index) => {
+          {Array.isArray(currentChapter.content) && currentChapter.content.map((paragraph, index) => {
             const paraIndex = index + 1;
             const isSelected = selectedParagraph === paraIndex;
             return (
               <div
                 key={index}
-                ref={el => (paragraphRefs.current[index] = el)}
+                ref={el => { paragraphRefs.current[index] = el; }}
                 onClick={() => typeof paragraph === 'string' && handleParagraphClick(paraIndex, paragraph)}
                 className={`flex items-start gap-4 transition-colors duration-200 rounded-lg cursor-pointer ${isSelected ? 'bg-primary/10 p-4 -mx-4 ring-2 ring-primary' : 'p-4 -mx-4'}`}
               >
@@ -243,5 +243,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
 };
 
 export default ReaderScreen;
+
+    
 
     
