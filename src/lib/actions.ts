@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/db';
@@ -108,7 +109,7 @@ export const createBook = async (bookData: {
   authorName: string;
   authorId: number;
   chapters: { title: string; subtitle: string; content: string }[];
-}): Promise<Book> => {
+}): Promise<Book & { chapters: Chapter[] }> => {
   const { title, description, preface, coverUrl, authorName, authorId, chapters } = bookData;
 
   const newBook = await db.book.create({
@@ -126,6 +127,9 @@ export const createBook = async (bookData: {
                   content: ch.content.split('\n').filter(p => p.trim() !== '')
               }))
           }
+      },
+      include: {
+        chapters: true
       }
   });
   

@@ -1,4 +1,5 @@
 
+
 // This file can be used to share types between server and client.
 
 // Example from a previous migration step, will be replaced by Prisma generated types
@@ -35,7 +36,7 @@ export interface Bookmark {
   timestamp: number;
 }
 
-export type Screen = 'home' | 'search' | 'library' | 'profile' | 'community' | 'settings' | 'bookDetail' | 'reader' | 'comments' | 'following' | 'newPublication' | 'newBook';
+export type Screen = 'home' | 'search' | 'library' | 'profile' | 'community' | 'settings' | 'bookDetail' | 'reader' | 'comments' | 'following' | 'newPublication' | 'newBook' | 'editBook';
 
 export interface NavigationState {
     screen: Screen;

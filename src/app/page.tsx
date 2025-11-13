@@ -29,7 +29,7 @@ const MainApp: React.FC = () => {
   const [profileUser, setProfileUser] = useState<User | null>(null); // New state
 
   useEffect(() => {
-    if (navigation.screen !== activeTab && !['bookDetail', 'reader', 'comments', 'following', 'newPublication', 'newBook'].includes(navigation.screen)) {
+    if (navigation.screen !== activeTab && !['bookDetail', 'reader', 'comments', 'following', 'newPublication', 'newBook', 'editBook'].includes(navigation.screen)) {
       setNavigation({ screen: activeTab });
     }
   }, [activeTab, navigation.screen]);
@@ -44,12 +44,15 @@ const MainApp: React.FC = () => {
     } else if (screen === 'profile' && params?.userId) { // New logic for profile screen
         const fetchedUser = await getUserById(params.userId);
         setProfileUser(fetchedUser);
+    } else if (screen === 'editBook' && params?.bookId) {
+        const fetchedBook = await getBookById(params.bookId);
+        setBook(fetchedBook);
     }
     setNavigation({ screen, params });
   };
   
   const goBack = () => {
-     if (['bookDetail', 'reader', 'comments', 'following', 'newPublication', 'newBook'].includes(navigation.screen)) {
+     if (['bookDetail', 'reader', 'comments', 'following', 'newPublication', 'newBook', 'editBook'].includes(navigation.screen)) {
        setNavigation({ screen: activeTab });
      }
   };
@@ -108,7 +111,9 @@ const MainApp: React.FC = () => {
         content = <NewPublicationScreen goBack={goBack} currentUser={user} />;
         break;
     case 'newBook':
-        const { bookId } = navigation.params || {};
+        content = <NewBookScreen goBack={goBack} navigate={navigate} />;
+        break;
+    case 'editBook':
         content = <NewBookScreen goBack={goBack} navigate={navigate} existingBook={book} />;
         break;
     default:
