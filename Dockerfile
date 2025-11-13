@@ -51,7 +51,7 @@
     COPY --from=builder /app/prisma ./prisma
     
     ENV NODE_ENV=production
-    ENV PORT=3000
+    ENV PORT=3002
     
     # Expondo porta padrão
     EXPOSE 3002
