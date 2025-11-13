@@ -123,7 +123,7 @@ export const createBook = async (bookData: {
               create: chapters.map(ch => ({
                   title: ch.title,
                   subtitle: ch.subtitle,
-                  content: JSON.parse(JSON.stringify(ch.content.split('\n').filter(p => p.trim() !== '')))
+                  content: ch.content.split('\n').filter(p => p.trim() !== '')
               }))
           }
       }
