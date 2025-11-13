@@ -136,7 +136,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
   }, [selectedParagraph, annotations, generateAnnotation]);
   
   const handleBookmarkToggle = async () => {
-    if (!selectedParagraph || !currentChapter || !currentUser || !currentChapter.content) return;
+    if (!selectedParagraph || !currentChapter || !currentUser || !currentChapter.content || !Array.isArray(currentChapter.content)) return;
     const paragraphText = currentChapter.content[selectedParagraph - 1];
 
     if (isCurrentParagraphBookmarked) {
@@ -199,7 +199,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
        <div className="max-w-3xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-zinc-100 text-center">{currentChapter.title}</h2>
         <div className="space-y-6">
-          {currentChapter.content && currentChapter.content.map((paragraph, index) => {
+          {currentChapter.content && Array.isArray(currentChapter.content) && currentChapter.content.map((paragraph, index) => {
             const paraIndex = index + 1;
             const isSelected = selectedParagraph === paraIndex;
             return (
@@ -242,5 +242,3 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
 };
 
 export default ReaderScreen;
-
-    
