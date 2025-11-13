@@ -1,5 +1,6 @@
+
 'use client';
-import React, { useState, useEffect } from 'react'; // Added this line
+import React, { useState, useEffect } from 'react';
 import LandingScreen from '@/screens/LandingScreen';
 import HomeScreen from '@/screens/HomeScreen';
 import SearchScreen from '@/screens/SearchScreen';
@@ -19,14 +20,14 @@ import { Spinner } from '@/components/Spinner';
 import { User, Book as BookType, CommunityPost as CommunityPostType } from '@/lib/prisma/definitions';
 import { Screen, NavigationState } from '@/lib/definitions';
 import { useUser, UserProvider } from '@/hooks/use-user';
-import { getBookById, getUserById } from '@/lib/actions'; // Added getUserById
+import { getBookById, getUserById } from '@/lib/actions';
 
 const MainApp: React.FC = () => {
   const { user, isLoading, login } = useUser();
   const [navigation, setNavigation] = useState<NavigationState>({ screen: 'home' });
   const [activeTab, setActiveTab] = useState<Screen>('home');
   const [book, setBook] = useState<BookType | null>(null);
-  const [profileUser, setProfileUser] = useState<User | null>(null); // New state
+  const [profileUser, setProfileUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (navigation.screen !== activeTab && !['bookDetail', 'reader', 'comments', 'following', 'newPublication', 'newBook', 'editBook'].includes(navigation.screen)) {
@@ -38,10 +39,10 @@ const MainApp: React.FC = () => {
     if (screen === 'bookDetail' && params?.bookId) {
       const fetchedBook = await getBookById(params.bookId);
       setBook(fetchedBook);
-    } else if(screen === 'reader' && params?.bookId && !params?.book) {
+    } else if(screen === 'reader' && params?.bookId) {
         const fetchedBook = await getBookById(params.bookId);
         params.book = fetchedBook;
-    } else if (screen === 'profile' && params?.userId) { // New logic for profile screen
+    } else if (screen === 'profile' && params?.userId) {
         const fetchedUser = await getUserById(params.userId);
         setProfileUser(fetchedUser);
     } else if (screen === 'editBook' && params?.bookId) {
@@ -90,7 +91,7 @@ const MainApp: React.FC = () => {
       content = <CommunityScreen navigate={navigate} currentUser={user} />;
       break;
     case 'profile':
-      content = <ProfileScreen navigate={navigate} user={profileUser || user} />; // Use profileUser if available, otherwise current user
+      content = <ProfileScreen navigate={navigate} user={profileUser || user} />;
       break;
     case 'settings':
       content = <SettingsScreen />;

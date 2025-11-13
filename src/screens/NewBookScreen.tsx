@@ -57,7 +57,11 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
             description: existingBook.description,
             preface: existingBook.preface || '',
             coverUrl: existingBook.coverUrl,
-            chapters: existingBook.chapters?.map(c => ({...c, content: Array.isArray(c.content) ? c.content.join('\n') : c.content || ''})) || [{ title: '', subtitle: '', content: '' }],
+            chapters: existingBook.chapters?.map(c => ({
+              ...c, 
+              subtitle: c.subtitle || '', // Handle null subtitle
+              content: Array.isArray(c.content) ? c.content.join('\n') : c.content || ''
+            })) || [{ title: '', subtitle: '', content: '' }],
         });
     }
   }, [isEditing, existingBook, reset]);

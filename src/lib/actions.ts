@@ -137,17 +137,8 @@ export const createBook = async (bookData: {
         author: true
       }
   });
-
-  const createdBook = await db.book.findUnique({
-    where: { id: newBook.id },
-    include: { chapters: true, author: true }
-  });
   
-  if (!createdBook) {
-      throw new Error("Failed to retrieve the created book with chapters.");
-  }
-
-  return createdBook as Book & { chapters: Chapter[], author: User };
+  return newBook as Book & { chapters: Chapter[], author: User };
 };
 
 
@@ -242,7 +233,7 @@ export async function saveReadingProgress(userId: number, bookId: number, chapte
   return progress;
 }
 
-export async function getReadingProgress(userId: number, bookId: number): Promise<(ReadingProgress & { book: Book & { chapters: Chapter[] } }) | null> {
+export async function getReadingProgress(userId: number, bookId: number): Promise<(ReadingProgress & { book: Book & { chapters: Chapter[], author: User } }) | null> {
     const progress = await db.readingProgress.findUnique({
         where: { userId_bookId: { userId, bookId } },
         include: {
@@ -254,7 +245,7 @@ export async function getReadingProgress(userId: number, bookId: number): Promis
             },
         },
     });
-    return progress as (ReadingProgress & { book: Book & { chapters: Chapter[] } }) | null;
+    return progress as (ReadingProgress & { book: Book & { chapters: Chapter[], author: User } }) | null;
 }
 
 export async function getAllReadingProgress(userId: number): Promise<(ReadingProgress & { book: Book & { author: User; chapters: Chapter[] } })[]> {
@@ -285,7 +276,7 @@ export async function getAllBookmarks(userId: number): Promise<(Bookmark & { boo
         },
         orderBy: { createdAt: 'desc' }
     });
-    return bookmarks;
+    return bookmarks as (Bookmark & { book: Book & { chapters: Chapter[]} })[];
 }
 
 export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string): Promise<Bookmark> {
@@ -332,3 +323,4 @@ export async function getActivitiesForUser(userId: number): Promise<Activity[]> 
     });
     return activities;
 }
+
