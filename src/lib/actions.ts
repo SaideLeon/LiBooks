@@ -138,10 +138,14 @@ export const createBook = async (bookData: {
     include: { chapters: true }
   });
   
+  if (!createdBook) {
+      throw new Error("Failed to retrieve the created book with chapters.");
+  }
+
   return createdBook as Book & { chapters: Chapter[] };
 };
 
-export const getCommunityPosts = async (): Promise<(CommunityPost & { author: User })[]> => {
+export const getCommunityPosts = async (): Promise<(CommunityPost & { author: User, commentsCount: number })[]> => {
     const posts = await db.communityPost.findMany({
         include: {
             author: true,
@@ -247,10 +251,16 @@ export async function getReadingProgress(userId: number, bookId: number): Promis
     return progress;
 }
 
-export async function getAllReadingProgress(userId: number): Promise<(ReadingProgress & { book: Book })[]> => {
+export async function getAllReadingProgress(userId: number): Promise<(ReadingProgress & { book: Book & { chapters: Chapter[]} })[]> {
     const progressRecords = await db.readingProgress.findMany({
         where: { userId },
-        include: { book: true },
+        include: { 
+            book: {
+                include: {
+                    chapters: true
+                }
+            } 
+        },
         orderBy: { updatedAt: 'desc' }
     });
     return progressRecords;
@@ -315,3 +325,4 @@ export async function getActivitiesForUser(userId: number): Promise<Activity[]> 
     });
     return activities;
 }
+
