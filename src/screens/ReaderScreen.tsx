@@ -1,7 +1,6 @@
 
 'use client';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { User } from '@/lib/prisma/definitions';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from 'marked';
 import { saveReadingProgress, addBookmark, removeBookmark, isBookmarked, createActivity } from '@/lib/actions';
@@ -206,13 +205,13 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
             return (
               <div
                 key={index}
-                ref={el => { paragraphRefs.current[index] = el; }}
+                ref={el => {paragraphRefs.current[index] = el;}}
                 onClick={() => typeof paragraph === 'string' && handleParagraphClick(paraIndex, paragraph)}
                 className={`flex items-start gap-4 transition-colors duration-200 rounded-lg cursor-pointer ${isSelected ? 'bg-primary/10 p-4 -mx-4 ring-2 ring-primary' : 'p-4 -mx-4'}`}
               >
                 <span className="text-lg font-bold text-primary pt-0.5">{paraIndex}</span>
                 <div className="flex-1">
-                    <p className="text-lg leading-relaxed">{paragraph}</p>
+                    {typeof paragraph === 'string' && <p className="text-lg leading-relaxed">{paragraph}</p>}
                     {isSelected && (
                         <div className="mt-4 rounded-lg border border-zinc-200 bg-white/50 p-3 dark:border-zinc-700 dark:bg-black/20">
                             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Anotação da IA</p>
@@ -243,7 +242,3 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
 };
 
 export default ReaderScreen;
-
-    
-
-    
