@@ -31,7 +31,8 @@
     "react-dom": "^18",
     "react-hook-form": "^7.51.5",
     "tailwind-merge": "^2.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
