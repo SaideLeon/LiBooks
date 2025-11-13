@@ -1,17 +1,17 @@
 'use client';
-import { Book } from '@/lib/prisma/definitions';
-import { NavigateFunction } from '@/lib/definitions';
+import { NavigateFunction, BookWithChapters } from '@/lib/definitions';
 import { getReadingProgress, ReadingProgress } from '@/lib/actions';
 import { useUser } from '@/hooks/use-user';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
 
 interface BookDetailScreenProps {
-  book: Book;
+  book: BookWithChapters;
   goBack: () => void;
   navigate: NavigateFunction;
 }
 
-const ChapterList: React.FC<{ book: Book; navigate: NavigateFunction, goBack: () => void; isAuthor: boolean; }> = ({ book, navigate, goBack, isAuthor }) => (
+const ChapterList: React.FC<{ book: BookWithChapters; navigate: NavigateFunction, goBack: () => void; isAuthor: boolean; }> = ({ book, navigate, goBack, isAuthor }) => (
     <div className="bg-background-light dark:bg-background-dark min-h-full">
         <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
             <div className="flex h-16 items-center px-4">

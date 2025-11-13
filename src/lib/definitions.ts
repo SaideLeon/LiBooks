@@ -1,4 +1,4 @@
-
+import { Book, Chapter } from './prisma/definitions';
 
 // This file can be used to share types between server and client.
 
@@ -13,6 +13,10 @@ export interface Book_DEPRECATED {
   preface: string;
   chapters: Chapter_DEPRECATED[];
 }
+
+export type BookWithChapters = Book & {
+  chapters?: Chapter[];
+};
 
 export interface Chapter_DEPRECATED {
   id: number;

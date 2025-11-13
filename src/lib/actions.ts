@@ -132,8 +132,13 @@ export const createBook = async (bookData: {
         chapters: true
       }
   });
+
+  const createdBook = await db.book.findUnique({
+    where: { id: newBook.id },
+    include: { chapters: true }
+  });
   
-  return newBook;
+  return createdBook as Book & { chapters: Chapter[] };
 };
 
 export const getCommunityPosts = async (): Promise<(CommunityPost & { author: User })[]> => {
@@ -228,14 +233,21 @@ export async function saveReadingProgress(userId: number, bookId: number, chapte
   return progress;
 }
 
-export async function getReadingProgress(userId: number, bookId: number): Promise<ReadingProgress | null> {
+export async function getReadingProgress(userId: number, bookId: number): Promise<(ReadingProgress & { book: Book & { chapters: Chapter[] } }) | null> {
     const progress = await db.readingProgress.findUnique({
-        where: { userId_bookId: { userId, bookId } }
+        where: { userId_bookId: { userId, bookId } },
+        include: {
+            book: {
+                include: {
+                    chapters: true,
+                },
+            },
+        },
     });
     return progress;
 }
 
-export async function getAllReadingProgress(userId: number): Promise<(ReadingProgress & { book: Book })[]> {
+export async function getAllReadingProgress(userId: number): Promise<(ReadingProgress & { book: Book })[]> => {
     const progressRecords = await db.readingProgress.findMany({
         where: { userId },
         include: { book: true },
