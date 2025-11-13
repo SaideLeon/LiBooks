@@ -113,7 +113,7 @@ export const createBook = async (bookData: {
   authorName: string;
   authorId: number;
   chapters: { title: string; subtitle: string; content: string }[];
-}): Promise<Book & { chapters: Chapter[] }> => {
+}): Promise<Book & { chapters: Chapter[], author: User }> => {
   const { title, description, preface, coverUrl, authorName, authorId, chapters } = bookData;
 
   const newBook = await db.book.create({
@@ -133,21 +133,23 @@ export const createBook = async (bookData: {
           }
       },
       include: {
-        chapters: true
+        chapters: true,
+        author: true
       }
   });
 
   const createdBook = await db.book.findUnique({
     where: { id: newBook.id },
-    include: { chapters: true }
+    include: { chapters: true, author: true }
   });
   
   if (!createdBook) {
       throw new Error("Failed to retrieve the created book with chapters.");
   }
 
-  return createdBook as Book & { chapters: Chapter[] };
+  return createdBook as Book & { chapters: Chapter[], author: User };
 };
+
 
 export const getCommunityPosts = async (): Promise<(CommunityPost & { author: User, commentsCount: number })[]> => {
     const posts = await db.communityPost.findMany({
@@ -159,7 +161,6 @@ export const getCommunityPosts = async (): Promise<(CommunityPost & { author: Us
         }
     });
 
-    // Manually add commentsCount for now
     const postsWithCounts = await Promise.all(
         posts.map(async (post) => {
             const commentsCount = await db.comment.count({ where: { communityPostId: post.id } });
@@ -248,11 +249,12 @@ export async function getReadingProgress(userId: number, bookId: number): Promis
             book: {
                 include: {
                     chapters: true,
+                    author: true
                 },
             },
         },
     });
-    return progress;
+    return progress as (ReadingProgress & { book: Book & { chapters: Chapter[] } }) | null;
 }
 
 export async function getAllReadingProgress(userId: number): Promise<(ReadingProgress & { book: Book & { author: User; chapters: Chapter[] } })[]> {

@@ -10,13 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 import { createBook } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
-import { Book } from '@/lib/prisma/definitions';
-import { NavigateFunction } from '@/lib/definitions';
+import { BookWithChapters, NavigateFunction } from '@/lib/definitions';
 
 interface BookFormScreenProps {
   goBack: () => void;
   navigate: NavigateFunction;
-  existingBook?: Book | null;
+  existingBook?: BookWithChapters | null;
 }
 
 type FormData = {
