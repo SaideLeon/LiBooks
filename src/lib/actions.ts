@@ -84,7 +84,7 @@ export const addComment = async (postId: number, userId: number, text: string): 
     return newComment;
 };
 
-export const getBooks = async (): Promise<(Book & { author: User, chapters: Chapter[] })[]> => {
+export const getBooks = async (): Promise<(Book & { author: User; chapters: Chapter[] })[]> => {
     const books = await db.book.findMany({
         include: {
             author: true,
@@ -255,19 +255,20 @@ export async function getReadingProgress(userId: number, bookId: number): Promis
     return progress;
 }
 
-export async function getAllReadingProgress(userId: number): Promise<(ReadingProgress & { book: Book & { chapters: Chapter[]} })[]> {
+export async function getAllReadingProgress(userId: number): Promise<(ReadingProgress & { book: Book & { author: User; chapters: Chapter[] } })[]> {
     const progressRecords = await db.readingProgress.findMany({
         where: { userId },
         include: { 
             book: {
                 include: {
-                    chapters: true
+                    chapters: true,
+                    author: true,
                 }
             } 
         },
         orderBy: { updatedAt: 'desc' }
     });
-    return progressRecords;
+    return progressRecords as (ReadingProgress & { book: Book & { author: User; chapters: Chapter[] } })[];
 }
 
 export async function getAllBookmarks(userId: number): Promise<(Bookmark & { book: Book & { chapters: Chapter[]} })[]> {

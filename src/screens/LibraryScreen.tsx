@@ -1,11 +1,11 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Book, Bookmark as PrismaBookmark, ReadingProgress, getAllReadingProgress, getAllBookmarks, Chapter } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
-import type { Book as BookWithChapters, User } from '@/lib/prisma/definitions';
+import type { User } from '@/lib/prisma/definitions';
 import { NavigateFunction } from '@/lib/definitions';
-
 
 interface LibraryScreenProps {
   navigate: NavigateFunction;
@@ -14,10 +14,11 @@ interface LibraryScreenProps {
 interface BookWithProgress extends Book {
     progress: ReadingProgress;
     author: User;
+    chapters: Chapter[];
 }
 
 type BookmarkWithRelations = PrismaBookmark & { 
-  book: BookWithChapters;
+  book: Book & { chapters: Chapter[] };
 };
 
 const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigate }) => {
