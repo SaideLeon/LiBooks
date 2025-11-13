@@ -1,15 +1,13 @@
 'use client';
-import React from 'react';
 import { User } from '@/lib/prisma/definitions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
-
-type Screen = 'home' | 'search' | 'library' | 'profile' | 'community' | 'settings';
+import { Screen, NavigateFunction } from '@/lib/definitions';
 
 interface SideNavProps {
   activeTab: Screen;
   changeTab: (tab: Screen) => void;
-  navigate: (page: string, params?: any) => void;
+  navigate: NavigateFunction;
   currentUser: User;
 }
 

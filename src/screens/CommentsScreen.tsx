@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { getCommentsForPost, addComment } from '@/lib/actions';
 import type { CommunityPost, User, Comment as CommentType } from '@/lib/actions';
+import { NavigateFunction } from '@/lib/definitions';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -11,7 +12,7 @@ interface CommentWithUser extends CommentType {
 
 interface CommentsScreenProps {
   goBack: () => void;
-  navigate: (page: string, params?: any) => void;
+  navigate: NavigateFunction;
   post: CommunityPost;
   currentUser: User;
 }

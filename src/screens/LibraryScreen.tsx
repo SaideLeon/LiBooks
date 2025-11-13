@@ -4,10 +4,11 @@ import { Book, Bookmark as PrismaBookmark, ReadingProgress, getAllReadingProgres
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
 import type { Book as BookWithChapters, User } from '@/lib/prisma/definitions';
+import { NavigateFunction } from '@/lib/definitions';
 
 
 interface LibraryScreenProps {
-  navigate: (page: string, params?: any) => void;
+  navigate: NavigateFunction;
 }
 
 interface BookWithProgress extends Book {

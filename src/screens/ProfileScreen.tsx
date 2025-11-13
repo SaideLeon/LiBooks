@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { CommunityPost, User } from '@/lib/prisma/definitions';
+import { NavigateFunction } from '@/lib/definitions';
 import { getUserById, getCommunityPosts, getFollowers, getFollowing, getIsFollowing, toggleFollow } from '@/lib/actions';
 import { useUser } from '@/hooks/use-user';
 import { Spinner } from '@/components/Spinner';
@@ -41,7 +42,7 @@ const PublicationCard: React.FC<{publication: CommunityPost}> = ({ publication }
 );
 
 interface ProfileScreenProps {
-  navigate: (page: string, params?: any) => void;
+  navigate: NavigateFunction;
   user: User; // The user whose profile is being viewed
 }
 

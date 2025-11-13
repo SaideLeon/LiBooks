@@ -34,3 +34,12 @@ export interface Bookmark {
   text: string;
   timestamp: number;
 }
+
+export type Screen = 'home' | 'search' | 'library' | 'profile' | 'community' | 'settings' | 'bookDetail' | 'reader' | 'comments' | 'following' | 'newPublication' | 'newBook';
+
+export interface NavigationState {
+    screen: Screen;
+    params?: any;
+}
+
+export type NavigateFunction = (screen: Screen, params?: any) => Promise<void> | void;

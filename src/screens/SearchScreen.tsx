@@ -1,11 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Book } from '@/lib/prisma/definitions';
+import { NavigateFunction } from '@/lib/definitions';
 import { getBooks } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 
 interface SearchScreenProps {
-  navigate: (page: string, params?: any) => void;
+  navigate: NavigateFunction;
 }
 
 const SearchIcon = () => (

@@ -10,10 +10,11 @@ import { createBook } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
 import { Book } from '@/lib/prisma/definitions';
+import { NavigateFunction } from '@/lib/definitions';
 
 interface BookFormScreenProps {
   goBack: () => void;
-  navigate: (page: string, params?: any) => void;
+  navigate: NavigateFunction;
   existingBook?: Book | null;
 }
 

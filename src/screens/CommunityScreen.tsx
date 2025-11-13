@@ -1,17 +1,18 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { CommunityPost, User } from '@/lib/prisma/definitions';
+import { NavigateFunction } from '@/lib/definitions';
 import { getCommunityPosts, toggleFollow, getIsFollowing } from '@/lib/actions';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Spinner } from '@/components/Spinner';
 
 interface CommunityScreenProps {
-  navigate: (page: string, params?: any) => void;
+  navigate: NavigateFunction;
   currentUser: User;
 }
 
-const CommunityPostCard: React.FC<{ post: CommunityPost, navigate: (page: string, params?: any) => void; currentUser: User }> = ({ post, navigate, currentUser }) => {
+const CommunityPostCard: React.FC<{ post: CommunityPost, navigate: NavigateFunction; currentUser: User }> = ({ post, navigate, currentUser }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likes, setLikes] = useState(post.likes);

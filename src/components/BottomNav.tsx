@@ -1,7 +1,6 @@
 'use client';
 import React from 'react';
-
-type Screen = 'home' | 'search' | 'library' | 'profile' | 'community' | 'settings';
+import { Screen } from '@/lib/definitions';
 
 interface BottomNavProps {
   activeTab: Screen;

@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { getFollowing, toggleFollow } from '@/lib/actions';
 import { User } from '@/lib/prisma/definitions';
+import { NavigateFunction } from '@/lib/definitions';
 import { useUser } from '@/hooks/use-user';
 import { Spinner } from '@/components/Spinner';
 
 interface FollowingScreenProps {
   goBack: () => void;
-  navigate: (page: string, params?: any) => void;
+  navigate: NavigateFunction;
 }
 
 const UserListItem: React.FC<{ user: User, currentUser: User }> = ({ user, currentUser }) => {
