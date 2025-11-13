@@ -136,12 +136,13 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
   }, [selectedParagraph, annotations, generateAnnotation]);
   
   const handleBookmarkToggle = async () => {
-    if (!selectedParagraph || !currentChapter || !currentUser || !currentChapter.content || !Array.isArray(currentChapter.content)) return;
+    if (!selectedParagraph || !currentChapter || !currentUser || !Array.isArray(currentChapter.content)) return;
     const paragraphText = currentChapter.content[selectedParagraph - 1];
+
+    if (typeof paragraphText !== 'string') return;
 
     if (isCurrentParagraphBookmarked) {
         await removeBookmark(currentUser.id, book.id, currentChapter.id, selectedParagraph);
-        setIsCurrentParagraphBookmarked(false);
         toast({ title: "Favorito removido" });
     } else {
         await addBookmark(currentUser.id, book.id, currentChapter.id, selectedParagraph, paragraphText);
@@ -206,7 +207,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
               <div
                 key={index}
                 ref={el => (paragraphRefs.current[index] = el)}
-                onClick={() => handleParagraphClick(paraIndex, paragraph)}
+                onClick={() => typeof paragraph === 'string' && handleParagraphClick(paraIndex, paragraph)}
                 className={`flex items-start gap-4 transition-colors duration-200 rounded-lg cursor-pointer ${isSelected ? 'bg-primary/10 p-4 -mx-4 ring-2 ring-primary' : 'p-4 -mx-4'}`}
               >
                 <span className="text-lg font-bold text-primary pt-0.5">{paraIndex}</span>
@@ -242,3 +243,5 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
 };
 
 export default ReaderScreen;
+
+    
