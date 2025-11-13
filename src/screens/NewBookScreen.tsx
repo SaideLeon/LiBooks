@@ -60,7 +60,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
             chapters: existingBook.chapters?.map(c => ({
               ...c, 
               subtitle: c.subtitle || '', // Handle null subtitle
-              content: Array.isArray(c.content) ? c.content.join('\n') : c.content || ''
+              content: Array.isArray(c.content) ? c.content.join('\n') : ''
             })) || [{ title: '', subtitle: '', content: '' }],
         });
     }
