@@ -1,10 +1,13 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Book, User, ReadingProgress } from '@/lib/prisma/definitions';
+import { Chapter, User, ReadingProgress, Book as PrismaBook } from '@/lib/prisma/definitions';
 import { NavigateFunction } from '@/lib/definitions';
 import { getAllReadingProgress, getBooks } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
+
+type Book = PrismaBook & { chapters?: Chapter[] };
 
 interface BookWithProgress extends Book {
     progress: ReadingProgress;

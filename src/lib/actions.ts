@@ -45,18 +45,22 @@ export const register = async (data: Pick<NewUser, 'name' | 'email' | 'password'
      return newUser;
 };
 
-export const getUserById = async (id: number): Promise<(User & { authoredBooks: Book[], posts: CommunityPost[], comments: Comment[], followers: Follow[], following: Follow[] }) | null> => {
+export const getUserById = async (id: number): Promise<(User & { authoredBooks: (Book & { chapters: Chapter[] })[], posts: CommunityPost[], comments: Comment[], followers: Follow[], following: Follow[] }) | null> => {
   const user = await db.user.findUnique({
       where: { id },
       include: {
-          authoredBooks: true,
+          authoredBooks: {
+            include: {
+              chapters: true,
+            }
+          },
           posts: true,
           comments: true,
           followers: true,
           following: true
       }
   });
-  return user;
+  return user as (User & { authoredBooks: (Book & { chapters: Chapter[] })[], posts: CommunityPost[], comments: Comment[], followers: Follow[], following: Follow[] }) | null;
 };
 
 export const getCommentsForPost = async (postId: number): Promise<(Comment & { author: User })[]> => {
