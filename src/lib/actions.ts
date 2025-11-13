@@ -325,4 +325,3 @@ export async function getActivitiesForUser(userId: number): Promise<Activity[]> 
     });
     return activities;
 }
-
