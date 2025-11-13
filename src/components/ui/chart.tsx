@@ -1,27 +1,66 @@
 "use client"
 
 import * as React from "react"
-import * as RechartsPrimitive from "recharts"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Label,
+  LabelList,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+  Rectangle,
+  ResponsiveContainer,
+  Sector,
+  Tooltip,
+  XAxis,
+  YAxis,
+  type BarProps,
+  type CartesianGridProps,
+  type CellProps,
+  type LabelListProps,
+  type LabelProps,
+  type LegendProps,
+  type LineProps,
+  type PieProps,
+  type PolarAngleAxisProps,
+  type PolarGridProps,
+  type PolarRadiusAxisProps,
+  type RadialBarProps,
+  type ResponsiveContainerProps,
+  type SectorProps,
+  type TooltipProps,
+  type XAxisProps,
+  type YAxisProps,
+} from "recharts"
+import {
+  type AxisConfig,
+  type ChartConfig,
+  type ChartContextProps,
+  type ChartLegendContentProps,
+  type ChartStyleConfig,
+  type ChartTooltipContentProps,
+} from "recharts-extend"
 
 import { cn } from "@/lib/utils"
+import {
+  Tooltip as TooltipPrimitive,
+  TooltipContent as TooltipContentPrimitive,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-// Format: { THEME_NAME: CSS_SELECTOR }
-const THEMES = { light: "", dark: ".dark" } as const
-
-export type ChartConfig = {
-  [k in string]: {
-    label?: React.ReactNode
-    icon?: React.ComponentType
-  } & (
-    | { color?: string; theme?: never }
-    | { color?: never; theme: Record<keyof typeof THEMES, string> }
-  )
-}
-
-type ChartContextProps = {
-  config: ChartConfig
-}
-
+// Context
+// -----------------------------------------------------------------------------
 const ChartContext = React.createContext<ChartContextProps | null>(null)
 
 function useChart() {
@@ -34,242 +73,208 @@ function useChart() {
   return context
 }
 
+// Components
+// -----------------------------------------------------------------------------
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
     config: ChartConfig
-    children: React.ComponentProps<
-      typeof RechartsPrimitive.ResponsiveContainer
-    >["children"]
+    children: React.ComponentProps<typeof ResponsiveContainer>["children"]
+    className?: string
   }
 >(({ id, className, children, config, ...props }, ref) => {
-  const uniqueId = React.useId()
-  const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
+  const chartId = `chart-${id || React.useId()}`
+  const contextValue = React.useMemo(() => ({ config }), [config])
 
   return (
-    <ChartContext.Provider value={{ config }}>
+    <ChartContext.Provider value={contextValue}>
       <div
         data-chart={chartId}
         ref={ref}
         className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
+          "recharts-wrapper group/chart w-full h-full flex items-start justify-center text-xs [&>div]:h-full [&>div]:w-full",
           className
         )}
         {...props}
       >
-        <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        <ResponsiveContainer id={chartId}>{children}</ResponsiveContainer>
       </div>
     </ChartContext.Provider>
   )
 })
 ChartContainer.displayName = "Chart"
 
-const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(
-    ([, config]) => config.theme || config.color
-  )
-
-  if (!colorConfig.length) {
-    return null
-  }
-
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
-}
-
-const ChartTooltip = RechartsPrimitive.Tooltip
+const ChartTooltip = Tooltip
 
 const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<"div"> & {
-      payload?: any[] // Explicitly define payload
+  React.ElementRef<typeof TooltipContentPrimitive>,
+  React.ComponentProps<typeof TooltipContentPrimitive> &
+    Pick<
+      TooltipProps<any, any>,
+      "allowEscapeViewBox" | "content" | "cursor"
+    > & {
+      indicator?: "line" | "dot" | "dashed"
       hideLabel?: boolean
       hideIndicator?: boolean
-      indicator?: "line" | "dot" | "dashed"
-      nameKey?: string
-      labelKey?: string
       label?: React.ReactNode
+      labelFormatter?: ChartTooltipContentProps["labelFormatter"]
+      labelClassName?: string
+      formatter?: ChartTooltipContentProps["formatter"]
     }
 >(
   (
     {
-      active,
-      payload,
+      allowEscapeViewBox,
       className,
+      content,
+      cursor = true,
+      formatter,
       indicator = "dot",
       hideLabel = false,
       hideIndicator = false,
       label,
       labelFormatter,
       labelClassName,
-      formatter,
-      color,
-      nameKey,
-      labelKey,
     },
     ref
   ) => {
     const { config } = useChart()
 
     const tooltipLabel = React.useMemo(() => {
-      if (hideLabel || !payload?.length) {
+      if (hideLabel || !label) {
         return null
       }
 
-      const [item] = payload
-      const key = `${labelKey || item.dataKey || item.name || "value"}`
-      const itemConfig = getPayloadConfigFromPayload(config, item, key)
-      const value =
-        !labelKey && typeof label === "string"
-          ? config[label as keyof typeof config]?.label || label
-          : itemConfig?.label
+      const item = config[label as string] as AxisConfig | undefined
 
       if (labelFormatter) {
-        return (
-          <div className={cn("font-medium", labelClassName)}>
-            {labelFormatter(value, payload)}
-          </div>
-        )
+        return labelFormatter(label, config)
       }
 
-      if (!value) {
-        return null
+      if (item?.label) {
+        return item.label
       }
 
-      return <div className={cn("font-medium", labelClassName)}>{value}</div>
-    }, [
-      label,
-      labelFormatter,
-      payload,
-      hideLabel,
-      labelClassName,
-      config,
-      labelKey,
-    ])
+      return label
+    }, [label, labelFormatter, hideLabel, config])
 
-    if (!active || !payload?.length) {
+    if (!content || !("active" in content && content.active)) {
       return null
     }
 
-    const nestLabel = payload.length === 1 && indicator !== "dot"
+    const { payload = [] } = content
 
     return (
-      <div
+      <TooltipContentPrimitive
         ref={ref}
+        wrapperClassName="recharts-tooltip-wrapper"
         className={cn(
-          "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
+          "rounded-md border bg-background/95 p-2 text-sm shadow-lg backdrop-blur-sm",
           className
         )}
       >
-        {!nestLabel ? tooltipLabel : null}
-        <div className="grid gap-1.5">
-          {payload.map((item, index) => {
-            const key = `${nameKey || item.name || item.dataKey || "value"}`
-            const itemConfig = getPayloadConfigFromPayload(config, item, key)
-            const indicatorColor = color || item.payload.fill || item.color
+        {tooltipLabel ? (
+          <div className={cn("pb-1 pl-2 pr-1 font-medium", labelClassName)}>
+            {tooltipLabel}
+          </div>
+        ) : null}
+        <div className="flex flex-col gap-1.5 p-1">
+          {payload.map((item, i) => {
+            const key = `${item.name}-${i}`
+            const itemConfig = config[item.name as string]
+
+            const indicatorColor =
+              itemConfig?.color || item.color || "hsl(var(--foreground))"
+
+            const value =
+              formatter?.(item.value, item.name, item, i, payload) ??
+              item.value
+
+            if (item.value === undefined || item.value === null) {
+              return null
+            }
 
             return (
               <div
-                key={item.dataKey}
+                key={key}
                 className={cn(
-                  "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
-                  indicator === "dot" && "items-center"
+                  "flex items-center justify-between gap-1.5",
+                  hideIndicator && "justify-end"
                 )}
               >
-                {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
-                ) : (
-                  <>
-                    {itemConfig?.icon ? (
-                      <itemConfig.icon />
-                    ) : (
-                      !hideIndicator && (
-                        <div
-                          className={cn(
-                            "shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
-                            {
-                              "h-2.5 w-2.5": indicator === "dot",
-                              "w-1": indicator === "line",
-                              "w-0 border-[1.5px] border-dashed bg-transparent":
-                                indicator === "dashed",
-                              "my-0.5": nestLabel && indicator === "dashed",
-                            }
-                          )}
-                          style={
-                            {
-                              "--color-bg": indicatorColor,
-                              "--color-border": indicatorColor,
-                            } as React.CSSProperties
-                          }
-                        />
-                      )
+                {!hideIndicator && (
+                  <div
+                    className={cn(
+                      "size-2.5 shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
+                      {
+                        "border-0": indicator === "dot",
+                        "border-2": indicator === "line",
+                        "w-0 border-[1.5px] border-dashed bg-transparent":
+                          indicator === "dashed",
+                        "*:size-2.5": indicator === "dot",
+                      }
                     )}
-                    <div
-                      className={cn(
-                        "flex flex-1 justify-between leading-none",
-                        nestLabel ? "items-end" : "items-center"
-                      )}
-                    >
-                      <div className="grid gap-1.5">
-                        {nestLabel ? tooltipLabel : null}
-                        <span className="text-muted-foreground">
-                          {itemConfig?.label || item.name}
-                        </span>
-                      </div>
-                      {item.value && (
-                        <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </>
+                    style={
+                      {
+                        "--color-bg": indicatorColor,
+                        "--color-border": indicatorColor,
+                      } as React.CSSProperties
+                    }
+                  >
+                    {indicator === "dot" && (
+                      <div className="rounded-full bg-background" />
+                    )}
+                  </div>
                 )}
+                <div
+                  className={cn(
+                    "flex w-full flex-wrap items-center justify-end gap-x-1.5 gap-y-1",
+                    !hideIndicator && "grid flex-1 grid-cols-2"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "text-muted-foreground",
+                      !hideIndicator && "order-2 text-right"
+                    )}
+                  >
+                    {itemConfig?.label || item.name}
+                  </span>
+                  <span
+                    className={cn(
+                      "font-medium",
+                      hideIndicator ? "text-foreground" : "order-1 text-right"
+                    )}
+                  >
+                    {value as React.ReactNode}
+                  </span>
+                </div>
               </div>
             )
           })}
         </div>
-      </div>
+      </TooltipContentPrimitive>
     )
   }
 )
-ChartTooltipContent.displayName = "ChartTooltip"
+ChartTooltipContent.displayName = "ChartTooltipContent"
 
-const ChartLegend = RechartsPrimitive.Legend
-
-const ChartLegendContent = React.forwardRef<
+const ChartLegend = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+    Pick<LegendProps, "payload" | "verticalAlign"> & {
       hideIcon?: boolean
       nameKey?: string
     }
 >(
   (
-    { className, hideIcon = false, payload, verticalAlign = "bottom", nameKey },
+    {
+      className,
+      hideIcon,
+      payload,
+      verticalAlign = "bottom",
+      nameKey = "name",
+    },
     ref
   ) => {
     const { config } = useChart()
@@ -282,29 +287,31 @@ const ChartLegendContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "flex items-center justify-center gap-4",
-          verticalAlign === "top" ? "pb-3" : "pt-3",
+          "recharts-legend flex items-center justify-center gap-4",
+          verticalAlign === "top" ? "mb-4" : "mt-4",
           className
         )}
       >
         {payload.map((item) => {
-          const key = `${nameKey || item.dataKey || "value"}`
-          const itemConfig = getPayloadConfigFromPayload(config, item, key)
+          const key = item.value as string
+          const itemConfig = config[key]
+          const color =
+            itemConfig?.color || item.color || "hsl(var(--foreground))"
 
           return (
             <div
-              key={item.value}
+              key={key}
               className={cn(
-                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
+                "flex items-center gap-1.5 [&>svg]:size-3 [&>svg]:shrink-0"
               )}
             >
               {itemConfig?.icon && !hideIcon ? (
                 <itemConfig.icon />
               ) : (
                 <div
-                  className="h-2 w-2 shrink-0 rounded-[2px]"
+                  className="size-2.5 shrink-0 rounded-[2px]"
                   style={{
-                    backgroundColor: item.color,
+                    backgroundColor: color,
                   }}
                 />
               )}
@@ -316,52 +323,246 @@ const ChartLegendContent = React.forwardRef<
     )
   }
 )
-ChartLegendContent.displayName = "ChartLegend"
+ChartLegend.displayName = "ChartLegend"
 
-// Helper to extract item config from a payload.
-function getPayloadConfigFromPayload(
-  config: ChartConfig,
-  payload: unknown,
-  key: string
-) {
-  if (typeof payload !== "object" || payload === null) {
-    return undefined
+// This is a workaround to provide a default legend formatter.
+// The recharts library doesn't provide a way to render a custom legend with default formatting.
+const ChartLegendContent = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<"div"> &
+    Pick<LegendProps, "verticalAlign"> & {
+      hideIcon?: boolean
+      nameKey?: string
+      content?: React.ComponentType<LegendProps>
+    }
+>(
+  (
+    {
+      className,
+      hideIcon,
+      verticalAlign = "bottom",
+      nameKey = "name",
+      content: Content,
+      ...props
+    },
+    ref
+  ) => {
+    const { config } = useChart()
+    const payload = React.useMemo(
+      () =>
+        Object.entries(config).map(([key, config]) => ({
+          value: key,
+          ...config,
+          payload: {
+            ...config,
+          },
+          color: config.color,
+          dataKey: key,
+        })),
+      [config]
+    )
+
+    if (!payload.length) {
+      return null
+    }
+
+    if (Content) {
+      return <Content {...props} payload={payload} />
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "recharts-legend flex items-center justify-center gap-4",
+          verticalAlign === "top" ? "mb-4" : "mt-4",
+          className
+        )}
+      >
+        {payload.map((item) => {
+          const key = item.value
+          const itemConfig = config[key]
+          const color =
+            itemConfig?.color || item.color || "hsl(var(--foreground))"
+
+          return (
+            <div
+              key={key}
+              className={cn(
+                "flex items-center gap-1.5 [&>svg]:size-3 [&>svg]:shrink-0"
+              )}
+            >
+              {itemConfig?.icon && !hideIcon ? (
+                <itemConfig.icon />
+              ) : (
+                <div
+                  className="size-2.5 shrink-0 rounded-[2px]"
+                  style={{
+                    backgroundColor: color,
+                  }}
+                />
+              )}
+              {itemConfig?.label}
+            </div>
+          )
+        })}
+      </div>
+    )
   }
+)
+ChartLegendContent.displayName = "ChartLegendContent"
 
-  const payloadPayload =
-    "payload" in payload &&
-    typeof payload.payload === "object" &&
-    payload.payload !== null
-      ? payload.payload
-      : undefined
+const ChartStyle = React.forwardRef<
+  HTMLStyleElement,
+  React.ComponentProps<"style"> & { id: string }
+>(({ id, ...props }, ref) => {
+  const { config } = useChart()
 
-  let configLabelKey: string = key
+  const style = React.useMemo(() => {
+    const styles: ChartStyleConfig[] = [
+      {
+        ".recharts-wrapper": {
+          "--chart-font-family": "var(--font-sans)",
+          "--chart-font-size": "var(--font-size-xs)",
+        },
+        ".recharts-wrapper .recharts-cartesian-axis-tick-value": {
+          fontFamily: "var(--chart-font-family)",
+          fontSize: "var(--chart-font-size)",
+        },
+        ".recharts-wrapper .recharts-polar-axis-tick-value": {
+          fontFamily: "var(--chart-font-family)",
+          fontSize: "var(--chart-font-size)",
+        },
+        ".recharts-wrapper .recharts-legend-item-text": {
+          fontFamily: "var(--chart-font-family)",
+          fontSize: "var(--chart-font-size)",
+        },
+        ".recharts-wrapper .recharts-tooltip-wrapper": {
+          fontFamily: "var(--chart-font-family)",
+          fontSize: "var(--chart-font-size)",
+        },
+      },
+    ]
 
-  if (
-    key in payload &&
-    typeof payload[key as keyof typeof payload] === "string"
-  ) {
-    configLabelKey = payload[key as keyof typeof payload] as string
-  } else if (
-    payloadPayload &&
-    key in payloadPayload &&
-    typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
-  ) {
-    configLabelKey = payloadPayload[
-      key as keyof typeof payloadPayload
-    ] as string
-  }
+    Object.entries(config).forEach(([key, itemConfig]) => {
+      const color =
+        itemConfig.color ||
+        `hsl(var(--chart-${itemConfig.index || 0}))` ||
+        "hsl(var(--foreground))"
 
-  return configLabelKey in config
-    ? config[configLabelKey]
-    : config[key as keyof typeof config]
-}
+      styles.push({
+        [`.recharts-wrapper .recharts-bar .recharts-bar-rectangle.chart-bar-${key}`]:
+          {
+            fill: color,
+          },
+        [`.recharts-wrapper .recharts-line .recharts-line-curve.chart-line-${key}`]:
+          {
+            stroke: color,
+          },
+        [`.recharts-wrapper .recharts-area .recharts-area-area.chart-area-${key}`]:
+          {
+            fill: color,
+            stroke: color,
+          },
+        [`.recharts-wrapper .recharts-pie .recharts-pie-sector.chart-pie-${key}`]:
+          {
+            fill: color,
+          },
+        [`.recharts-wrapper .recharts-radial-bar .recharts-radial-bar-background-sector`]:
+          {
+            fill: "hsl(var(--muted))",
+          },
+        [`.recharts-wrapper .recharts-radial-bar .recharts-radial-bar-sector.chart-radial-bar-${key}`]:
+          {
+            fill: color,
+          },
+        [`.recharts-wrapper .recharts-dot.recharts-line-dot.chart-dot-${key}`]:
+          {
+            fill: color,
+            stroke: "hsl(var(--background))",
+          },
+      })
+    })
+
+    const css = styles
+      .map((style) => {
+        return Object.entries(style)
+          .map(([selector, rules]) => {
+            const declarations = Object.entries(rules)
+              .map(([property, value]) => {
+                const prop = property.replace(
+                  /([A-Z])/g,
+                  (g) => `-${g[0].toLowerCase()}`
+                )
+                return `${prop}: ${value};`
+              })
+              .join(" ")
+            return `[data-chart=${id}] ${selector} { ${declarations} }`
+          })
+          .join("\n")
+      })
+      .join("\n")
+
+    return css
+  }, [config, id])
+
+  return <style ref={ref} dangerouslySetInnerHTML={{ __html: style }} />
+})
+ChartStyle.displayName = "ChartStyle"
 
 export {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
+  ChartTooltip,
+  ChartTooltipContent,
+  Label,
+  LabelList,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+  Rectangle,
+  ResponsiveContainer,
+  Sector,
+  Tooltip,
+  TooltipProvider,
+  TooltipTrigger,
+  XAxis,
+  YAxis,
+  type AxisConfig,
+  type BarProps,
+  type CartesianGridProps,
+  type CellProps,
+  type ChartConfig,
+  type ChartContextProps,
+  type ChartLegendContentProps,
+  type ChartStyleConfig,
+  type ChartTooltipContentProps,
+  type LabelListProps,
+  type LabelProps,
+  type LegendProps,
+  type LineProps,
+  type PieProps,
+  type PolarAngleAxisProps,
+  type PolarGridProps,
+  type PolarRadiusAxisProps,
+  type RadialBarProps,
+  type ResponsiveContainerProps,
+  type SectorProps,
+  type TooltipProps,
+  type XAxisProps,
+  type YAxisProps,
 }
+export { useChart }
