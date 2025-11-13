@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import { CommunityPostWithAuthor, User } from '@/lib/prisma/definitions';
@@ -14,7 +15,7 @@ interface CommunityScreenProps {
 
 const CommunityPostCard: React.FC<{ post: CommunityPostWithAuthor, navigate: NavigateFunction; currentUser: User }> = ({ post, navigate, currentUser }) => {
   const [isFollowing, setIsFollowing] = useState(false);
-  const [isLiked, setIsLiked] = useState(post.isLiked);
+  const [isLiked, setIsLiked] = useState(false); // isLiked is not part of post data
   const [likes, setLikes] = useState(post.likes);
 
   useEffect(() => {
