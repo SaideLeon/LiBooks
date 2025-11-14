@@ -62,7 +62,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
             chapters: existingBook.chapters?.map(c => ({
               ...c, 
               subtitle: c.subtitle || '', // Handle null subtitle
-              content: Array.isArray(c.content) ? c.content.join('\n') : ''
+              content: Array.isArray(c.content) ? c.content.join('\n\n') : ''
             })) || [{ title: '', subtitle: '', content: '' }],
         });
     }
@@ -88,7 +88,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
     setIsSplittingVerse(chapterIndex);
     try {
       const verses = await splitTextIntoVersesAction(content);
-      setValue(`chapters.${chapterIndex}.content`, verses.join('\n'));
+      setValue(`chapters.${chapterIndex}.content`, verses.join('\n\n'));
       toast({
         title: 'Conteúdo dividido!',
         description: 'O texto foi formatado em versículos pela IA.',
@@ -126,21 +126,22 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
             chapters: chaptersWithSplitContent,
         };
 
+        let newOrUpdatedBook;
         if (isEditing && existingBook) {
-            const updatedBook = await updateBook(existingBook.id, bookData);
+            newOrUpdatedBook = await updateBook(existingBook.id, bookData);
             toast({
                 title: 'Livro atualizado com sucesso!',
-                description: `"${updatedBook?.title}" foi atualizado.`,
+                description: `"${newOrUpdatedBook?.title}" foi atualizado.`,
             });
-            navigate('bookDetail', { bookId: updatedBook?.id });
         } else {
-            const newBook = await createBook({ ...bookData, authorId: user.id });
+            newOrUpdatedBook = await createBook({ ...bookData, authorId: user.id });
             toast({
                 title: 'Livro publicado com sucesso!',
-                description: `"${newBook.title}" está agora disponível.`,
+                description: `"${newOrUpdatedBook.title}" está agora disponível.`,
             });
-            navigate('bookDetail', { bookId: newBook.id });
         }
+        navigate('bookDetail', { bookId: newOrUpdatedBook?.id });
+
     } catch (error) {
         console.error(error);
         toast({

@@ -58,7 +58,6 @@ export const login = async (email: string, password: string): Promise<User | nul
   try {
 
     const user = await db.user.findUnique({ where: { email } });
-
     
 
     if (!user) {
@@ -306,7 +305,6 @@ export const createBook = async (bookData: {
       }
 
   });
-
   
 
   return newBook as Book & { chapters: Chapter[], author: User };
@@ -335,15 +333,15 @@ export const updateBook = async (bookId: number, bookData: {
   }
 
   const existingChapterIds = existingBook.chapters.map(c => c.id);
-  const incomingChapterIds = chapters.map(c => c.id).filter(id => id !== undefined);
+  const incomingChapterIds = chapters.map(c => c.id).filter((id): id is number => id !== undefined);
 
   const chaptersToDelete = existingChapterIds.filter(id => !incomingChapterIds.includes(id));
-  const chaptersToUpdate = chapters.filter(c => c.id !== undefined && existingChapterIds.includes(c.id!));
+  const chaptersToUpdate = chapters.filter((c): c is { id: number; title: string; subtitle: string; content: string[] } => c.id !== undefined && existingChapterIds.includes(c.id));
   const chaptersToCreate = chapters.filter(c => c.id === undefined);
 
-  await db.$transaction([
-    // Update book details
-    db.book.update({
+  await db.$transaction(async (tx) => {
+    // 1. Update book details
+    await tx.book.update({
       where: { id: bookId },
       data: {
         title,
@@ -352,41 +350,44 @@ export const updateBook = async (bookId: number, bookData: {
         coverUrl,
         authorName,
       },
-    }),
+    });
 
-    // Delete chapters
-    ...chaptersToDelete.map(chapterId =>
-      db.chapter.delete({ where: { id: chapterId } })
-    ),
+    // 2. Delete chapters that are no longer present
+    if (chaptersToDelete.length > 0) {
+      await tx.chapter.deleteMany({
+        where: { id: { in: chaptersToDelete } },
+      });
+    }
 
-    // Update existing chapters
-    ...chaptersToUpdate.map(chapter =>
-      db.chapter.update({
-        where: { id: chapter.id },
-        data: {
-          title: chapter.title,
-          subtitle: chapter.subtitle,
-          content: chapter.content,
-        },
-      })
-    ),
-
-    // Create new chapters
-    db.book.update({
-      where: { id: bookId },
-      data: {
-        chapters: {
-          create: chaptersToCreate.map(chapter => ({
+    // 3. Update existing chapters
+    if (chaptersToUpdate.length > 0) {
+      for (const chapter of chaptersToUpdate) {
+        await tx.chapter.update({
+          where: { id: chapter.id },
+          data: {
             title: chapter.title,
             subtitle: chapter.subtitle,
             content: chapter.content,
-          })),
-        },
-      },
-    }),
-  ]);
+          },
+        });
+      }
+    }
 
-  return await getBookById(bookId);
+    // 4. Create new chapters
+    if (chaptersToCreate.length > 0) {
+      await tx.chapter.createMany({
+        data: chaptersToCreate.map(chapter => ({
+          bookId: bookId,
+          title: chapter.title,
+          subtitle: chapter.subtitle,
+          content: chapter.content,
+        })),
+      });
+    }
+  });
+
+  const updatedBook = await getBookById(bookId);
+  return updatedBook as Book & { author: User, chapters: Chapter[] };
 };
 
 
