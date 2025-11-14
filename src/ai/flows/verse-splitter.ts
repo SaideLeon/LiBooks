@@ -25,10 +25,9 @@ const verseSplitterFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       model: 'gemini-flash-latest',
       prompt: `
-        Analyze the following text and divide it into a series of short, meaningful verses.
-        Each verse should represent a complete idea or a natural pause in the text.
-        Respect the original sentence structure and language.
-        The goal is to format the text for readability, like verses in a poem or scripture.
+        Analyze the following text and divide it into paragraphs or short sentences, each forming a complete thought.
+        Avoid splitting sentences in the middle. Each element in the output array should be a full sentence or a self-contained idea.
+        The goal is to format the text for readability, like verses in a poem or scripture, but without breaking the grammatical structure.
         Do not add, remove, or change any words from the original text.
 
         Return the output as a single JSON object with a key "verses" that contains an array of the verse strings.
