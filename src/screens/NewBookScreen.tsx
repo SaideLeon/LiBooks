@@ -118,7 +118,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
     try {
         const chaptersWithSplitContent = data.chapters.map(chapter => ({
             ...chapter,
-            content: chapter.content.split('\n').filter(p => p.trim() !== ''),
+            content: chapter.content.split(/\n\s*\n/).filter(p => p.trim() !== ''),
         }));
 
         const bookData = {
