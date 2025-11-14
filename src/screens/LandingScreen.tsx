@@ -21,6 +21,7 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onLoginSuccess }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,16 +86,25 @@ const LandingScreen: React.FC<LandingScreenProps> = ({ onLoginSuccess }) => {
               className="mt-1 block w-full rounded-lg border-zinc-300 bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white focus:border-primary focus:ring-primary"
             />
           </div>
-          <div>
+          <div className="relative">
             <label className="text-sm font-medium" htmlFor="password">Senha</label>
             <input 
               id="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full rounded-lg border-zinc-300 bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white focus:border-primary focus:ring-primary"
+              className="mt-1 block w-full rounded-lg border-zinc-300 bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white focus:border-primary focus:ring-primary pr-10"
             />
+            <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 top-6 flex items-center pr-3 text-text-muted-light dark:text-text-muted-dark"
+            >
+                <span className="material-symbols-outlined text-xl">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                </span>
+            </button>
           </div>
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
