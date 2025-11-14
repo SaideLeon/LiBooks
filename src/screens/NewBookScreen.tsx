@@ -116,10 +116,20 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
 
     setIsSubmitting(true);
     try {
-        const chaptersWithSplitContent = data.chapters.map(chapter => ({
-            ...chapter,
-            content: chapter.content.split(/\n\s*\n/).filter(p => p.trim() !== ''),
-        }));
+        const chaptersWithSplitContent = data.chapters.map(chapter => {
+            // 1. Normalize line endings (Windows -> Unix) and collapse 3+ newlines into a standard paragraph break.
+            const normalizedContent = chapter.content
+                .replace(/\r\n/g, '\n')
+                .replace(/\n{3,}/g, '\n\n');
+            
+            // 2. Split by one or more empty lines, which now reliably separates paragraphs.
+            const contentArray = normalizedContent.split(/\n\s*\n/).filter(p => p.trim() !== '');
+
+            return {
+                ...chapter,
+                content: contentArray,
+            };
+        });
 
         const bookData = {
             ...data,
