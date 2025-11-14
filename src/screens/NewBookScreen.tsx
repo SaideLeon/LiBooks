@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { createBook, splitTextIntoVersesAction } from '@/lib/actions';
+import { createBook, splitTextIntoVersesAction, updateBook } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
 import { BookWithChapters, NavigateFunction } from '@/lib/definitions';
@@ -25,6 +25,7 @@ type FormData = {
   preface: string;
   coverUrl: string;
   chapters: {
+    id?: number;
     title: string;
     subtitle: string;
     content: string; // This will be the raw text from the textarea
@@ -104,53 +105,51 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
   };
 
   const onSubmit = async (data: FormData) => {
-    if (isEditing) {
-        // TODO: Implement update logic
-        console.log("Updating book:", data);
-        toast({
-            title: 'Funcionalidade em desenvolvimento',
-            description: 'A edição de livros será implementada em breve.',
-        });
-        return;
-    }
-
     if (!user) {
         toast({
             variant: 'destructive',
             title: 'Erro de autenticação',
-            description: 'Você precisa estar logado para publicar um livro.',
+            description: 'Você precisa estar logado para publicar ou editar um livro.',
         });
         return;
     }
+
     setIsSubmitting(true);
     try {
-      // Convert chapter content from a single string to an array of strings
-      const chaptersWithSplitContent = data.chapters.map(chapter => ({
-        ...chapter,
-        content: chapter.content.split('\n').filter(p => p.trim() !== ''),
-      }));
-      
-      const bookData = {
-        ...data,
-        chapters: chaptersWithSplitContent,
-        authorId: user.id
-      };
+        const chaptersWithSplitContent = data.chapters.map(chapter => ({
+            ...chapter,
+            content: chapter.content.split('\n').filter(p => p.trim() !== ''),
+        }));
 
-      const newBook = await createBook(bookData);
-      toast({
-        title: 'Livro publicado com sucesso!',
-        description: `"${newBook.title}" está agora disponível.`,
-      });
-      navigate('bookDetail', { bookId: newBook.id });
+        const bookData = {
+            ...data,
+            chapters: chaptersWithSplitContent,
+        };
+
+        if (isEditing && existingBook) {
+            const updatedBook = await updateBook(existingBook.id, bookData);
+            toast({
+                title: 'Livro atualizado com sucesso!',
+                description: `"${updatedBook?.title}" foi atualizado.`,
+            });
+            navigate('bookDetail', { bookId: updatedBook?.id });
+        } else {
+            const newBook = await createBook({ ...bookData, authorId: user.id });
+            toast({
+                title: 'Livro publicado com sucesso!',
+                description: `"${newBook.title}" está agora disponível.`,
+            });
+            navigate('bookDetail', { bookId: newBook.id });
+        }
     } catch (error) {
-      console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao publicar livro',
-        description: 'Não foi possível salvar o livro. Tente novamente.',
-      });
+        console.error(error);
+        toast({
+            variant: 'destructive',
+            title: `Erro ao ${isEditing ? 'atualizar' : 'publicar'} livro`,
+            description: `Não foi possível salvar o livro. Tente novamente.`,
+        });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   };
   
@@ -165,7 +164,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
         </Button>
         <h1 className="flex-1 text-center text-lg font-bold">{headerTitle}</h1>
         <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-          {isSubmitting ? <><Spinner /> Publicando...</> : submitButtonText}
+          {isSubmitting ? <><Spinner /> Salvando...</> : submitButtonText}
         </Button>
       </header>
 

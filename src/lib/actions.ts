@@ -315,6 +315,80 @@ export const createBook = async (bookData: {
 
 
 
+export const updateBook = async (bookId: number, bookData: {
+  title: string;
+  description: string;
+  preface: string;
+  coverUrl: string;
+  authorName: string;
+  chapters: { id?: number; title: string; subtitle: string; content: string[] }[];
+}) => {
+  const { title, description, preface, coverUrl, authorName, chapters } = bookData;
+
+  const existingBook = await db.book.findUnique({
+    where: { id: bookId },
+    include: { chapters: true },
+  });
+
+  if (!existingBook) {
+    throw new Error('Book not found');
+  }
+
+  const existingChapterIds = existingBook.chapters.map(c => c.id);
+  const incomingChapterIds = chapters.map(c => c.id).filter(id => id !== undefined);
+
+  const chaptersToDelete = existingChapterIds.filter(id => !incomingChapterIds.includes(id));
+  const chaptersToUpdate = chapters.filter(c => c.id !== undefined && existingChapterIds.includes(c.id!));
+  const chaptersToCreate = chapters.filter(c => c.id === undefined);
+
+  await db.$transaction([
+    // Update book details
+    db.book.update({
+      where: { id: bookId },
+      data: {
+        title,
+        description,
+        preface,
+        coverUrl,
+        authorName,
+      },
+    }),
+
+    // Delete chapters
+    ...chaptersToDelete.map(chapterId =>
+      db.chapter.delete({ where: { id: chapterId } })
+    ),
+
+    // Update existing chapters
+    ...chaptersToUpdate.map(chapter =>
+      db.chapter.update({
+        where: { id: chapter.id },
+        data: {
+          title: chapter.title,
+          subtitle: chapter.subtitle,
+          content: chapter.content,
+        },
+      })
+    ),
+
+    // Create new chapters
+    db.book.update({
+      where: { id: bookId },
+      data: {
+        chapters: {
+          create: chaptersToCreate.map(chapter => ({
+            title: chapter.title,
+            subtitle: chapter.subtitle,
+            content: chapter.content,
+          })),
+        },
+      },
+    }),
+  ]);
+
+  return await getBookById(bookId);
+};
+
 
 
 export const getCommunityPosts = async (): Promise<(CommunityPost & { author: User, _count: { comments: number } })[]> => {
