@@ -62,7 +62,8 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
             chapters: existingBook.chapters?.map(c => ({
               ...c, 
               subtitle: c.subtitle || '', // Handle null subtitle
-              content: Array.isArray(c.content) ? c.content.join('\n\n') : ''
+              // Prioritize rawContent, fall back to joining the array for old data
+              content: c.rawContent || (Array.isArray(c.content) ? c.content.join('\n\n') : ''),
             })) || [{ title: '', subtitle: '', content: '' }],
         });
     }
@@ -116,24 +117,10 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
 
     setIsSubmitting(true);
     try {
-        const chaptersWithSplitContent = data.chapters.map(chapter => {
-            // 1. Normalize line endings (Windows -> Unix) and collapse 3+ newlines into a standard paragraph break.
-            const normalizedContent = chapter.content
-                .replace(/\r\n/g, '\n')
-                .replace(/\n{3,}/g, '\n\n');
-            
-            // 2. Split by one or more empty lines, which now reliably separates paragraphs.
-            const contentArray = normalizedContent.split(/\n\s*\n/).filter(p => p.trim() !== '');
-
-            return {
-                ...chapter,
-                content: contentArray,
-            };
-        });
-
+        // Data is now sent directly without client-side processing
         const bookData = {
             ...data,
-            chapters: chaptersWithSplitContent,
+            authorId: user.id, // Ensure authorId is included
         };
 
         let newOrUpdatedBook;
@@ -144,7 +131,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
                 description: `"${newOrUpdatedBook?.title}" foi atualizado.`,
             });
         } else {
-            newOrUpdatedBook = await createBook({ ...bookData, authorId: user.id });
+            newOrUpdatedBook = await createBook(bookData);
             toast({
                 title: 'Livro publicado com sucesso!',
                 description: `"${newOrUpdatedBook.title}" está agora disponível.`,

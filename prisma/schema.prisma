@@ -51,6 +51,7 @@ model Chapter {
   id        Int      @id @default(autoincrement())
   title     String
   subtitle  String?
+  rawContent String?
   content   String[]
   book      Book     @relation(fields: [bookId], references: [id])
   bookId    Int

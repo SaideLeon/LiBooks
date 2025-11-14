@@ -244,70 +244,187 @@ export const getBookById = async (id: number): Promise<(Book & { author: User, c
 
 export const createBook = async (bookData: {
 
+
+
   title: string;
+
+
 
   description: string;
 
+
+
   preface: string;
+
+
 
   coverUrl: string;
 
+
+
   authorName: string;
+
+
 
   authorId: number;
 
-  chapters: { title: string; subtitle: string; content: string[] }[];
+
+
+  chapters: { title: string; subtitle: string; content: string }[]; // Expect raw string
+
+
 
 }): Promise<Book & { chapters: Chapter[], author: User }> => {
+
+
 
   const { title, description, preface, coverUrl, authorName, authorId, chapters } = bookData;
 
 
 
+
+
+
+
   const newBook = await db.book.create({
+
+
 
       data: {
 
+
+
           title,
+
+
 
           description,
 
+
+
           preface,
+
+
 
           coverUrl,
 
+
+
           authorName,
+
+
 
           authorId,
 
+
+
           chapters: {
 
-              create: chapters.map(ch => ({
 
-                  title: ch.title,
 
-                  subtitle: ch.subtitle,
+              create: chapters.map(ch => {
 
-                  content: ch.content
 
-              }))
+
+                  // Server-side processing
+
+
+
+                  const normalizedContent = ch.content
+
+
+
+                      .replace(/\r\n/g, '\n')
+
+
+
+                      .replace(/\n{3,}/g, '\n\n');
+
+
+
+                  const contentArray = normalizedContent.split(/\n\s*\n/).filter(p => p.trim() !== '');
+
+
+
+
+
+
+
+                  return {
+
+
+
+                      title: ch.title,
+
+
+
+                      subtitle: ch.subtitle,
+
+
+
+                      rawContent: ch.content, // Save the original raw content
+
+
+
+                      content: contentArray,    // Save the processed array
+
+
+
+                  };
+
+
+
+              })
+
+
 
           }
 
+
+
       },
+
+
 
       include: {
 
+
+
         chapters: true,
+
+
 
         author: true
 
+
+
       }
 
+
+
   });
+
+
+
   
 
+
+
+  revalidatePath('/');
+
+
+
+  revalidatePath(`/books`);
+
+
+
+
+
+
+
   return newBook as Book & { chapters: Chapter[], author: User };
+
+
 
 };
 
@@ -319,7 +436,7 @@ export const updateBook = async (bookId: number, bookData: {
   preface: string;
   coverUrl: string;
   authorName: string;
-  chapters: { id?: number; title: string; subtitle: string; content: string[] }[];
+  chapters: { id?: number; title: string; subtitle: string; content: string }[]; // Expect raw string
 }) => {
   const { title, description, preface, coverUrl, authorName, chapters } = bookData;
 
@@ -336,8 +453,16 @@ export const updateBook = async (bookId: number, bookData: {
   const incomingChapterIds = chapters.map(c => c.id).filter((id): id is number => id !== undefined);
 
   const chaptersToDelete = existingChapterIds.filter(id => !incomingChapterIds.includes(id));
-  const chaptersToUpdate = chapters.filter((c): c is { id: number; title: string; subtitle: string; content: string[] } => c.id !== undefined && existingChapterIds.includes(c.id));
+  const chaptersToUpdate = chapters.filter((c): c is { id: number; title: string; subtitle: string; content: string } => c.id !== undefined && existingChapterIds.includes(c.id));
   const chaptersToCreate = chapters.filter(c => c.id === undefined);
+
+  // Helper function for server-side content processing
+  const processContent = (rawContent: string) => {
+    const normalizedContent = rawContent
+        .replace(/\r\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n');
+    return normalizedContent.split(/\n\s*\n/).filter(p => p.trim() !== '');
+  };
 
   await db.$transaction(async (tx) => {
     // 1. Update book details
@@ -367,7 +492,8 @@ export const updateBook = async (bookId: number, bookData: {
           data: {
             title: chapter.title,
             subtitle: chapter.subtitle,
-            content: chapter.content,
+            rawContent: chapter.content,
+            content: processContent(chapter.content),
           },
         });
       }
@@ -380,13 +506,19 @@ export const updateBook = async (bookId: number, bookData: {
           bookId: bookId,
           title: chapter.title,
           subtitle: chapter.subtitle,
-          content: chapter.content,
+          rawContent: chapter.content,
+          content: processContent(chapter.content),
         })),
       });
     }
   });
 
   const updatedBook = await getBookById(bookId);
+  
+  revalidatePath('/');
+  revalidatePath(`/books`);
+  revalidatePath(`/books/${bookId}`);
+
   return updatedBook as Book & { author: User, chapters: Chapter[] };
 };
 
