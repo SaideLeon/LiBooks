@@ -27,7 +27,7 @@ type FormData = {
   chapters: {
     title: string;
     subtitle: string;
-    content: string;
+    content: string; // This will be the raw text from the textarea
   }[];
 };
 
@@ -124,7 +124,19 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
     }
     setIsSubmitting(true);
     try {
-      const newBook = await createBook({...data, authorId: user.id });
+      // Convert chapter content from a single string to an array of strings
+      const chaptersWithSplitContent = data.chapters.map(chapter => ({
+        ...chapter,
+        content: chapter.content.split('\n').filter(p => p.trim() !== ''),
+      }));
+      
+      const bookData = {
+        ...data,
+        chapters: chaptersWithSplitContent,
+        authorId: user.id
+      };
+
+      const newBook = await createBook(bookData);
       toast({
         title: 'Livro publicado com sucesso!',
         description: `"${newBook.title}" está agora disponível.`,

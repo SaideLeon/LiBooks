@@ -257,7 +257,7 @@ export const createBook = async (bookData: {
 
   authorId: number;
 
-  chapters: { title: string; subtitle: string; content: string }[];
+  chapters: { title: string; subtitle: string; content: string[] }[];
 
 }): Promise<Book & { chapters: Chapter[], author: User }> => {
 
@@ -289,7 +289,7 @@ export const createBook = async (bookData: {
 
                   subtitle: ch.subtitle,
 
-                  content: ch.content.split('\n').filter(p => p.trim() !== '')
+                  content: ch.content
 
               }))
 
@@ -672,5 +672,3 @@ export async function getActivitiesForUser(userId: number): Promise<Activity[]> 
     return activities;
 
 }
-
-
