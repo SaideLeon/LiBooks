@@ -82,7 +82,7 @@ const CommunityPostCard: React.FC<{ post: CommunityPostWithAuthor, navigate: Nav
                 </button>
                 <button onClick={() => navigate('comments', { post })} className="flex items-center gap-1.5 text-text-muted-light dark:text-text-muted-dark hover:text-primary">
                     <span className="material-symbols-outlined text-xl">chat_bubble_outline</span>
-                    <span className="text-sm font-medium">{post.commentsCount}</span>
+                    <span className="text-sm font-medium">{post._count.comments}</span>
                 </button>
             </div>
             <button className="flex items-center gap-1.5 text-text-muted-light dark:text-text-muted-dark hover:text-primary">
