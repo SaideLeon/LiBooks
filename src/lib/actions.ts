@@ -141,7 +141,7 @@ export const createBook = async (bookData: {
 };
 
 
-export const getCommunityPosts = async (): Promise<(CommunityPost & { author: User, commentsCount: number })[]> => {
+export const getCommunityPosts = async (): Promise<(CommunityPost & { author: User, _count: { comments: number } })[]> => {
     const posts = await db.communityPost.findMany({
         include: {
             author: true,
@@ -154,10 +154,7 @@ export const getCommunityPosts = async (): Promise<(CommunityPost & { author: Us
         }
     });
 
-    return posts.map(post => ({
-        ...post,
-        commentsCount: post._count.comments
-    }));
+    return posts;
 };
 
 export const createPublication = async (data: { authorId: number, content: string, verses: string[], image?: string | null }): Promise<CommunityPost> => {

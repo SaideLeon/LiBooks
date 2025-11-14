@@ -1,12 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { CommunityPost, User } from '@/lib/prisma/definitions';
+import { CommunityPostWithAuthor, User } from '@/lib/prisma/definitions';
 import { NavigateFunction } from '@/lib/definitions';
 import { getUserById, getCommunityPosts, getFollowers, getFollowing, getIsFollowing, toggleFollow } from '@/lib/actions';
 import { useUser } from '@/hooks/use-user';
 import { Spinner } from '@/components/Spinner';
 
-const PublicationCard: React.FC<{publication: CommunityPost}> = ({ publication }) => (
+const PublicationCard: React.FC<{publication: CommunityPostWithAuthor}> = ({ publication }) => (
     <article className="p-4">
         <div className="flex flex-col items-stretch justify-start">
             {publication.imageUrl && (
@@ -30,7 +30,7 @@ const PublicationCard: React.FC<{publication: CommunityPost}> = ({ publication }
                 </div>
                 <div className="flex cursor-pointer items-center justify-center gap-2 rounded-full px-3 py-2 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800">
                     <span className="material-symbols-outlined text-zinc-500 dark:text-zinc-400">chat_bubble</span>
-                    <p className="text-[13px] font-bold leading-normal tracking-[0.015em] text-zinc-500 dark:text-zinc-400">{publication.commentsCount}</p>
+                    <p className="text-[13px] font-bold leading-normal tracking-[0.015em] text-zinc-500 dark:text-zinc-400">{publication._count.comments}</p>
                 </div>
                 <div className="flex cursor-pointer items-center justify-center gap-2 rounded-full px-3 py-2 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800">
                     <span className="material-symbols-outlined text-zinc-500 dark:text-zinc-400">share</span>
@@ -49,7 +49,7 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigate, user: profileUser }) => {
   const { user: currentUser } = useUser();
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [posts, setPosts] = useState<CommunityPostWithAuthor[]>([]);
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -66,7 +66,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigate, user: profileUs
             currentUser ? getIsFollowing(currentUser.id, profileUser.id) : false
         ]);
         
-        setPosts(userPosts as CommunityPost[]);
+        setPosts(userPosts);
         setFollowers(userFollowers);
         setFollowing(userFollowing);
         setIsFollowing(isFollowingStatus);
