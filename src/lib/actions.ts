@@ -3,7 +3,24 @@
 
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import type { User, Book, Chapter, CommunityPost, Comment, Follow, ReadingProgress, Bookmark, Activity } from '@prisma/client';
+import { getActivitiesForUser } from './actions';
+import { splitTextIntoVerses } from '@/ai/flows/verse-splitter';
+import { revalidatePath } from 'next/cache';
+
+export async function splitTextIntoVersesAction(text: string): Promise<string[]> {
+  if (!text.trim()) {
+    return [];
+  }
+  try {
+    const result = await splitTextIntoVerses(text);
+    return result.verses;
+  } catch (error) {
+    console.error("Error splitting text into verses:", error);
+    // Em caso de erro na IA, retorne o texto original dividido por linhas como fallback
+    return text.split('\n').filter(p => p.trim() !== '');
+  }
+}
+
 
 export type { User, Book, Chapter, CommunityPost, Comment, Follow, ReadingProgress, Bookmark, Activity };
 

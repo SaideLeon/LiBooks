@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { createBook } from '@/lib/actions';
+import { createBook, splitTextIntoVersesAction } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
 import { BookWithChapters, NavigateFunction } from '@/lib/definitions';
@@ -34,11 +34,12 @@ type FormData = {
 const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, existingBook }) => {
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSplittingVerse, setIsSplittingVerse] = useState<number | null>(null);
   const { toast } = useToast();
   
   const isEditing = !!existingBook;
 
-  const { register, control, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
+  const { register, control, handleSubmit, formState: { errors }, reset, getValues, setValue } = useForm<FormData>({
     defaultValues: {
       title: '',
       authorName: '',
@@ -71,6 +72,36 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
     control,
     name: 'chapters',
   });
+
+  const handleVerseSplit = async (chapterIndex: number) => {
+    const content = getValues(`chapters.${chapterIndex}.content`);
+    if (!content || !content.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Conteúdo vazio',
+        description: 'Escreva o conteúdo do capítulo antes de usar a IA.',
+      });
+      return;
+    }
+
+    setIsSplittingVerse(chapterIndex);
+    try {
+      const verses = await splitTextIntoVersesAction(content);
+      setValue(`chapters.${chapterIndex}.content`, verses.join('\n'));
+      toast({
+        title: 'Conteúdo dividido!',
+        description: 'O texto foi formatado em versículos pela IA.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro da IA',
+        description: 'Não foi possível dividir o texto. Tente novamente.',
+      });
+    } finally {
+      setIsSplittingVerse(null);
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     if (isEditing) {
@@ -188,7 +219,18 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`chapters.${index}.content`}>Conteúdo do Capítulo</Label>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label htmlFor={`chapters.${index}.content`}>Conteúdo do Capítulo</Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleVerseSplit(index)}
+                      disabled={isSplittingVerse === index}
+                    >
+                      {isSplittingVerse === index ? <><Spinner /> Dividindo...</> : 'Dividir com IA'}
+                    </Button>
+                  </div>
                   <Textarea
                     id={`chapters.${index}.content`}
                     {...register(`chapters.${index}.content` as const, { required: 'Conteúdo é obrigatório' })}
