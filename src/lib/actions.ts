@@ -39,7 +39,6 @@ export const register = async (data: Pick<NewUser, 'name' | 'email' | 'password'
             email: data.email,
             password: hashedPassword,
             avatarUrl: data.avatarUrl,
-            bio: 'Amante da leitura e da reflexão.',
         }
     });
      return newUser;
