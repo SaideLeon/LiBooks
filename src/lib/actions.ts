@@ -263,12 +263,16 @@ export const createBook = async (bookData: {
       authorId,
       chapters: {
         create: await Promise.all(chapters.map(async ch => {
-          const processedContent = await splitTextIntoVerses(ch.content);
+          // If content was already split by AI on the client, it will contain '\n\n'.
+          const verses = ch.content.includes('\n\n')
+            ? ch.content.split('\n\n')
+            : (await splitTextIntoVerses(ch.content)).verses;
+
           return {
             title: ch.title,
             subtitle: ch.subtitle,
             rawContent: ch.content,
-            content: processedContent.verses,
+            content: verses.map(p => p.trim()).filter(p => p.length > 0),
           };
         }))
       }
@@ -332,14 +336,18 @@ export const updateBook = async (bookId: number, bookData: {
     }
 
     for (const chapter of chaptersToUpdate) {
-      const processedContent = await splitTextIntoVerses(chapter.content);
+      // If content was already split by AI on the client, it will contain '\n\n'.
+      const verses = chapter.content.includes('\n\n')
+        ? chapter.content.split('\n\n')
+        : (await splitTextIntoVerses(chapter.content)).verses;
+
       await tx.chapter.update({
         where: { id: chapter.id },
         data: {
           title: chapter.title,
           subtitle: chapter.subtitle,
           rawContent: chapter.content,
-          content: processedContent.verses,
+          content: verses.map(p => p.trim()).filter(p => p.length > 0),
         },
       });
     }
@@ -347,13 +355,17 @@ export const updateBook = async (bookId: number, bookData: {
     if (chaptersToCreate.length > 0) {
         await tx.chapter.createMany({
             data: await Promise.all(chaptersToCreate.map(async chapter => {
-                const processedContent = await splitTextIntoVerses(chapter.content);
+                // If content was already split by AI on the client, it will contain '\n\n'.
+                const verses = chapter.content.includes('\n\n')
+                    ? chapter.content.split('\n\n')
+                    : (await splitTextIntoVerses(chapter.content)).verses;
+                
                 return {
                     bookId: bookId,
                     title: chapter.title,
                     subtitle: chapter.subtitle,
                     rawContent: chapter.content,
-                    content: processedContent.verses,
+                    content: verses.map(p => p.trim()).filter(p => p.length > 0),
                 };
             }))
         });

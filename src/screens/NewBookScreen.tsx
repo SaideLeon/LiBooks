@@ -118,6 +118,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
     setIsSubmitting(true);
     try {
         // Data is now sent directly without client-side processing
+
         const bookData = {
             ...data,
             authorId: user.id, // Ensure authorId is included
