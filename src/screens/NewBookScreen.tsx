@@ -88,7 +88,8 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
 
     setIsSplittingVerse(chapterIndex);
     try {
-      const verses = await splitTextIntoVersesAction(content);
+      const cleanedContent = content.replace(/(\r\n|\n|\r)/gm, ' '); // Remove all line breaks
+      const verses = await splitTextIntoVersesAction(cleanedContent);
       setValue(`chapters.${chapterIndex}.content`, verses.join('\n\n'));
       toast({
         title: 'Conteúdo dividido!',
