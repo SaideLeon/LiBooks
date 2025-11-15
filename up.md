@@ -33,7 +33,7 @@ export const simpleFlow = ai.defineFlow(
   },
   async ({ text }) => {
     const { response } = await ai.generate({
-      model: googleAI.model("gemini-2.5-flash"),
+      model: googleAI.model("gemini-1.5-flash"),
       prompt: `Responda ao seguinte texto: ${text}`,
     });
 
