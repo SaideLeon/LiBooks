@@ -243,189 +243,46 @@ export const getBookById = async (id: number): Promise<(Book & { author: User, c
 
 
 export const createBook = async (bookData: {
-
-
-
   title: string;
-
-
-
   description: string;
-
-
-
   preface: string;
-
-
-
   coverUrl: string;
-
-
-
   authorName: string;
-
-
-
   authorId: number;
-
-
-
-  chapters: { title: string; subtitle: string; content: string }[]; // Expect raw string
-
-
-
+  chapters: { title: string; subtitle: string; content: string }[];
 }): Promise<Book & { chapters: Chapter[], author: User }> => {
-
-
-
   const { title, description, preface, coverUrl, authorName, authorId, chapters } = bookData;
 
-
-
-
-
-
-
   const newBook = await db.book.create({
-
-
-
-      data: {
-
-
-
-          title,
-
-
-
-          description,
-
-
-
-          preface,
-
-
-
-          coverUrl,
-
-
-
-          authorName,
-
-
-
-          authorId,
-
-
-
-          chapters: {
-
-
-
-              create: chapters.map(ch => {
-
-
-
-                  // Server-side processing
-
-
-
-                  const normalizedContent = ch.content
-
-
-
-                      .replace(/\r\n/g, '\n')
-
-
-
-                      .replace(/\n{3,}/g, '\n\n');
-
-
-
-                  const contentArray = normalizedContent.split(/\n\s*\n/).filter(p => p.trim() !== '');
-
-
-
-
-
-
-
-                  return {
-
-
-
-                      title: ch.title,
-
-
-
-                      subtitle: ch.subtitle,
-
-
-
-                      rawContent: ch.content, // Save the original raw content
-
-
-
-                      content: contentArray,    // Save the processed array
-
-
-
-                  };
-
-
-
-              })
-
-
-
-          }
-
-
-
-      },
-
-
-
-      include: {
-
-
-
-        chapters: true,
-
-
-
-        author: true
-
-
-
+    data: {
+      title,
+      description,
+      preface,
+      coverUrl,
+      authorName,
+      authorId,
+      chapters: {
+        create: await Promise.all(chapters.map(async ch => {
+          const processedContent = await splitTextIntoVerses(ch.content);
+          return {
+            title: ch.title,
+            subtitle: ch.subtitle,
+            rawContent: ch.content,
+            content: processedContent.verses,
+          };
+        }))
       }
-
-
-
+    },
+    include: {
+      chapters: true,
+      author: true
+    }
   });
-
-
-
   
-
-
-
   revalidatePath('/');
-
-
-
   revalidatePath(`/books`);
 
-
-
-
-
-
-
   return newBook as Book & { chapters: Chapter[], author: User };
-
-
-
 };
 
 
@@ -436,7 +293,7 @@ export const updateBook = async (bookId: number, bookData: {
   preface: string;
   coverUrl: string;
   authorName: string;
-  chapters: { id?: number; title: string; subtitle: string; content: string }[]; // Expect raw string
+  chapters: { id?: number; title: string; subtitle: string; content: string }[];
 }) => {
   const { title, description, preface, coverUrl, authorName, chapters } = bookData;
 
@@ -456,16 +313,7 @@ export const updateBook = async (bookId: number, bookData: {
   const chaptersToUpdate = chapters.filter((c): c is { id: number; title: string; subtitle: string; content: string } => c.id !== undefined && existingChapterIds.includes(c.id));
   const chaptersToCreate = chapters.filter(c => c.id === undefined);
 
-  // Helper function for server-side content processing
-  const processContent = (rawContent: string) => {
-    const normalizedContent = rawContent
-        .replace(/\r\n/g, '\n')
-        .replace(/\n{3,}/g, '\n\n');
-    return normalizedContent.split(/\n\s*\n/).filter(p => p.trim() !== '');
-  };
-
   await db.$transaction(async (tx) => {
-    // 1. Update book details
     await tx.book.update({
       where: { id: bookId },
       data: {
@@ -477,39 +325,38 @@ export const updateBook = async (bookId: number, bookData: {
       },
     });
 
-    // 2. Delete chapters that are no longer present
     if (chaptersToDelete.length > 0) {
       await tx.chapter.deleteMany({
         where: { id: { in: chaptersToDelete } },
       });
     }
 
-    // 3. Update existing chapters
-    if (chaptersToUpdate.length > 0) {
-      for (const chapter of chaptersToUpdate) {
-        await tx.chapter.update({
-          where: { id: chapter.id },
-          data: {
-            title: chapter.title,
-            subtitle: chapter.subtitle,
-            rawContent: chapter.content,
-            content: processContent(chapter.content),
-          },
-        });
-      }
-    }
-
-    // 4. Create new chapters
-    if (chaptersToCreate.length > 0) {
-      await tx.chapter.createMany({
-        data: chaptersToCreate.map(chapter => ({
-          bookId: bookId,
+    for (const chapter of chaptersToUpdate) {
+      const processedContent = await splitTextIntoVerses(chapter.content);
+      await tx.chapter.update({
+        where: { id: chapter.id },
+        data: {
           title: chapter.title,
           subtitle: chapter.subtitle,
           rawContent: chapter.content,
-          content: processContent(chapter.content),
-        })),
+          content: processedContent.verses,
+        },
       });
+    }
+
+    if (chaptersToCreate.length > 0) {
+        await tx.chapter.createMany({
+            data: await Promise.all(chaptersToCreate.map(async chapter => {
+                const processedContent = await splitTextIntoVerses(chapter.content);
+                return {
+                    bookId: bookId,
+                    title: chapter.title,
+                    subtitle: chapter.subtitle,
+                    rawContent: chapter.content,
+                    content: processedContent.verses,
+                };
+            }))
+        });
     }
   });
 
