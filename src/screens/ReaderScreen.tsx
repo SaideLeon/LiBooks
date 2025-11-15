@@ -102,7 +102,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
     setLoadingAnnotation(paragraphIndex);
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const prompt = `Explique o seguinte versículo ou passagem em um tom reflexivo e perspicaz, como se fosse uma anotação pessoal em um livro. Use Markdown para formatar a resposta com cabeçalhos, listas ou negrito, se apropriado, para melhor clareza e organização.: "${paragraphText}"`;
       
       const result = await model.generateContent(prompt);
