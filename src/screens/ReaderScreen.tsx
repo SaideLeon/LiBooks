@@ -1,7 +1,6 @@
 
 'use client';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from 'marked';
 import { saveReadingProgress, addBookmark, removeBookmark, isBookmarked, createActivity } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { generateAnnotation as generateAnnotationFlow } from '@/ai/flows/annotation-generator';
 
 interface ReaderScreenProps {
   book: BookWithChapters;
@@ -90,26 +90,25 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
   }, [selectedParagraph, book.id, currentChapter, currentUser, checkBookmarkStatus]);
 
   const generateAnnotation = useCallback(async (paragraphText: string, paragraphIndex: number) => {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-        toast({
-            variant: "destructive",
-            title: "AI não configurada",
-            description: "A chave da API Gemini não foi encontrada.",
-        });
-        return;
-    }
     setLoadingAnnotation(paragraphIndex);
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-      const prompt = `Explique o seguinte versículo ou passagem em um tom reflexivo e perspicaz, como se fosse uma anotação pessoal em um livro. Use Markdown para formatar a resposta com cabeçalhos, listas ou negrito, se apropriado, para melhor clareza e organização.: "${paragraphText}"`;
-      
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const annotationText = response.text();
+      if (!currentChapter || !Array.isArray(currentChapter.content)) {
+        throw new Error("Capítulo ou conteúdo não encontrado.");
+      }
 
-      const parsedAnnotation = await marked.parse(annotationText) as string;
+      const previousVerses = currentChapter.content
+        .slice(Math.max(0, paragraphIndex - 6), paragraphIndex - 1)
+        .filter((p): p is string => typeof p === 'string');
+
+      const input = {
+        selectedVerse: paragraphText,
+        previousVerses: previousVerses,
+        bookTitle: book.title,
+        authorName: book.authorName,
+      };
+
+      const result = await generateAnnotationFlow(input);
+      const parsedAnnotation = await marked.parse(result.annotation) as string;
       setAnnotations(prev => ({ ...prev, [paragraphIndex]: parsedAnnotation }));
 
     } catch (error) {
@@ -123,7 +122,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
     } finally {
       setLoadingAnnotation(null);
     }
-  }, [toast]);
+  }, [toast, currentChapter, book.title, book.authorName]);
 
   const handleParagraphClick = useCallback((paragraphIndex: number, paragraphText: string) => {
     const isCurrentlySelected = selectedParagraph === paragraphIndex;
