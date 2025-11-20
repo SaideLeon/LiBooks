@@ -2,6 +2,12 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: 'https://api.groq.com/openai/v1',
+});
 
 // Schema for the output: an array of strings (verses).
 const VerseSplittingOutputSchema = z.object({
@@ -22,9 +28,7 @@ const verseSplitterFlow = ai.defineFlow(
     outputSchema: VerseSplittingOutputSchema,
   },
   async ({ text }) => {
-    const llmResponse = await ai.generate({
-      model: "openai/gpt-oss-20b",
-      prompt: `
+    const prompt = `
         Analyze the following text and divide it into paragraphs or short sentences, each forming a complete thought.
         Avoid splitting sentences in the middle. Each element in the output array should be a full sentence or a self-contained idea.
         The goal is to format the text for readability, like verses in a poem or scripture, but without breaking the grammatical structure.
@@ -36,15 +40,25 @@ const verseSplitterFlow = ai.defineFlow(
         ---
         ${text}
         ---
-      `,
-      config: {
-        responseMimeType: 'application/json',
-      },
+      `;
+
+    const chatCompletion = await openai.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'openai/gpt-oss-20b',
+      response_format: { type: 'json_object' },
     });
 
-    const structuredOutput = llmResponse.output();
-    if (!structuredOutput) {
-      throw new Error('No structured output from AI');
+    const responseContent = chatCompletion.choices[0]?.message?.content;
+    if (!responseContent) {
+      throw new Error('No response from Groq API');
+    }
+
+    let structuredOutput;
+    try {
+      structuredOutput = JSON.parse(responseContent);
+    } catch (error) {
+      console.error('Failed to parse JSON response from AI:', error);
+      throw new Error('AI did not return valid JSON.');
     }
 
     const parsed = VerseSplittingOutputSchema.safeParse(structuredOutput);
