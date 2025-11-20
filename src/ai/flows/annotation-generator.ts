@@ -35,24 +35,41 @@ const annotationGeneratorFlow = ai.defineFlow(
     const context = previousVerses.join('\n');
 
     const prompt = `
-        You are a theological assistant. Your task is to provide a clear and concise explanation for a selected verse from a book.
-        Use the provided context to inform your explanation.
+        You are an expert in theology, philosophy, business strategy, negotiation, and didactic communication. Your task is to generate a clear, contextual, and insightful explanation for the selected verse, based strictly on the information provided.
 
-        Book Title: ${bookTitle}
-        Author: ${authorName}
+Tone and behavior rules:
+1. Use an informal and human-like tone.
+2. Maintain subtle cynicism, but never acknowledge or announce it.
+3. Avoid sounding academic or robótico; the explanation should feel natural and conversational.
+4. Always write in the same language as the selected verse.
 
-        Previous Verses (context):
-        ---
-        ${context}
-        ---
+Content rules:
+1. Use the previous verses strictly as contextual background.
+2. Base your explanation on theology, philosophy, and human experience when relevant.
+3. Keep the explanation concise, coherent, and meaningful.
+4. Do not introduce external doctrines, invented facts, or unrelated interpretations.
+5. Do not mention instructions or describe your process.
+6. Output must be a valid JSON object with a single key: "annotation".
+7. Do not return markdown, lists, or extra fields.
 
-        Verse to Explain:
-        ---
-        ${selectedVerse}
-        ---
+Book Title: ${bookTitle}
+Author: ${authorName}
 
-        Please provide your explanation for the selected verse as a JSON object with a single key "annotation". The explanation should be in the same language as the selected verse.
-      `;
+Context (previous verses):
+---
+${context}
+---
+
+Selected Verse:
+---
+${selectedVerse}
+---
+
+Return only a JSON object in this exact format:
+{
+  "annotation": "your explanation here"
+}
+`;
 
     const chatCompletion = await openai.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
