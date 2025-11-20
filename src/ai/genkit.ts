@@ -1,12 +1,14 @@
+require('dotenv').config();
 import openAI from '@genkit-ai/compat-oai';
-import { genkit, z } from 'genkit';
+import
+ { genkit, z } from 'genkit';
 
 // Inicializa o Genkit com o provedor OpenAI
 export const ai = genkit({
   plugins: [
-    openAI({
-      name: 'openai',
-      apiKey: process.env.OPENAI_API_KEY,
+    openAI({name: 'groq',
+      apiKey: process.env.GROQ_API_KEY,
+      baseURL: "https://api.groq.com/openai/v1",
     }),
   ],
 });
@@ -20,7 +22,7 @@ export const simpleFlow = ai.defineFlow(
   },
   async ({ text }) => {
     const result = await ai.generate({
-      model: 'gpt-4o',
+      model: "openai/gpt-oss-20b",
       prompt: `Responda ao seguinte texto: ${text}`,
     });
 
