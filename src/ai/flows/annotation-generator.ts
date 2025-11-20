@@ -51,12 +51,13 @@ const annotationGeneratorFlow = ai.defineFlow(
         ${selectedVerse}
         ---
 
-        Please provide your explanation for the selected verse.
+        Please provide your explanation for the selected verse as a JSON object with a single key "annotation".
       `;
 
     const chatCompletion = await openai.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       model: 'openai/gpt-oss-20b',
+      response_format: { type: 'json_object' },
     });
 
     const responseContent = chatCompletion.choices[0]?.message?.content;
@@ -64,7 +65,22 @@ const annotationGeneratorFlow = ai.defineFlow(
       throw new Error('No response from Groq API');
     }
 
-    return { annotation: responseContent };
+    let structuredOutput;
+    try {
+      structuredOutput = JSON.parse(responseContent);
+    } catch (error) {
+      console.error('Failed to parse JSON response from AI:', error);
+      throw new Error('AI did not return valid JSON.');
+    }
+
+    const parsed = AnnotationGeneratorOutputSchema.safeParse(structuredOutput);
+
+    if (!parsed.success) {
+      console.error('AI output parsing error:', parsed.error);
+      throw new Error('Failed to parse AI output into the expected schema.');
+    }
+
+    return parsed.data;
   }
 );
 
