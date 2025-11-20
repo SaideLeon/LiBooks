@@ -51,7 +51,7 @@ const annotationGeneratorFlow = ai.defineFlow(
         ${selectedVerse}
         ---
 
-        Please provide your explanation for the selected verse as a JSON object with a single key "annotation".
+        Please provide your explanation for the selected verse as a JSON object with a single key "annotation". The explanation should be in the same language as the selected verse.
       `;
 
     const chatCompletion = await openai.chat.completions.create({
