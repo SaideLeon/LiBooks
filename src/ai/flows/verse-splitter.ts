@@ -23,7 +23,7 @@ const verseSplitterFlow = ai.defineFlow(
   },
   async ({ text }) => {
     const llmResponse = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-exp',
+      model: 'gpt-4o',
       prompt: `
         Analyze the following text and divide it into paragraphs or short sentences, each forming a complete thought.
         Avoid splitting sentences in the middle. Each element in the output array should be a full sentence or a self-contained idea.

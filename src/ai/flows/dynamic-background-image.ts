@@ -42,7 +42,7 @@ const generateBackgroundImageFlow = ai.defineFlow(
   async () => {
     const currentTime = new Date().toLocaleTimeString();
     const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
+      model: 'dall-e-3',
       prompt: `It is ${currentTime}. Generate a background image appropriate for that time of day.`,
     });
 

@@ -1,21 +1,26 @@
-import { googleAI } from "@genkit-ai/google-genai";
-import { genkit, z } from "genkit";
+import openAI from '@genkit-ai/compat-oai';
+import { genkit, z } from 'genkit';
 
-// Inicializa o Genkit com o provedor Google Gemini
+// Inicializa o Genkit com o provedor OpenAI
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [
+    openAI({
+      name: 'openai',
+      apiKey: process.env.OPENAI_API_KEY,
+    }),
+  ],
 });
 
 // Exemplo de fluxo que poderás adaptar
 export const simpleFlow = ai.defineFlow(
   {
-    name: "simpleFlow",
+    name: 'simpleFlow',
     inputSchema: z.object({ text: z.string() }),
     outputSchema: z.object({ response: z.string() }),
   },
   async ({ text }) => {
     const result = await ai.generate({
-      model: googleAI.model("googleai/gemini-2.0-flash-exp"),
+      model: 'gpt-4o',
       prompt: `Responda ao seguinte texto: ${text}`,
     });
 
