@@ -124,7 +124,7 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                         </p>
                     </div>
                      <div className="px-6 md:px-0 py-6 space-y-4">
-                        <button onClick={handleReadButtonClick} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-secondary font-semibold text-white shadow-sm transition-colors hover:bg-secondary/90">
+                        <button onClick={handleReadButtonClick} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-secondary font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/90">
                             <span className="material-symbols-outlined">{progress ? 'play_arrow' : 'book'}</span>
                             <span>{buttonText}</span>
                         </button>
