@@ -53,7 +53,7 @@ model Chapter {
   subtitle  String?
   rawContent String?
   content   String[]
-  book      Book     @relation(fields: [bookId], references: [id])
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   bookId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -79,7 +79,7 @@ model Comment {
   id            Int           @id @default(autoincrement())
   author        User          @relation(fields: [authorId], references: [id])
   authorId      Int
-  post          CommunityPost @relation(fields: [communityPostId], references: [id])
+  post          CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
   communityPostId Int
   text          String
   createdAt     DateTime      @default(now())
@@ -88,9 +88,9 @@ model Comment {
 
 model Follow {
   id          Int      @id @default(autoincrement())
-  follower    User     @relation("Followers", fields: [followerId], references: [id])
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
   followerId  Int
-  following   User     @relation("Following", fields: [followingId], references: [id])
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
   followingId Int
   createdAt   DateTime @default(now())
 
@@ -99,11 +99,11 @@ model Follow {
 
 model ReadingProgress {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  book      Book     @relation(fields: [bookId], references: [id])
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   bookId    Int
-  chapter   Chapter  @relation(fields: [chapterId], references: [id])
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   chapterId Int
   paragraphIndex Int
   createdAt DateTime @default(now())
@@ -114,11 +114,11 @@ model ReadingProgress {
 
 model Bookmark {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  book      Book     @relation(fields: [bookId], references: [id])
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   bookId    Int
-  chapter   Chapter  @relation(fields: [chapterId], references: [id])
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   chapterId Int
   paragraphIndex Int
   text      String
@@ -127,10 +127,10 @@ model Bookmark {
 
 model Activity {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
   type      String // e.g., "STARTED_READING", "FINISHED_BOOK", "ADDED_BOOKMARK"
-  book      Book?    @relation("BookActivities", fields: [bookId], references: [id])
+  book      Book?    @relation("BookActivities", fields: [bookId], references: [id], onDelete: SetNull)
   bookId    Int?
   comment   String?
   createdAt DateTime @default(now())
