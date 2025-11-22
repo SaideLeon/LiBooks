@@ -89,7 +89,7 @@ const ThemeSwitcher: React.FC = () => {
     const getButtonClass = (buttonTheme: Theme) => {
         return `rounded-md px-3 py-1 text-sm font-medium transition-colors flex-1 ${
             theme === buttonTheme
-                ? 'bg-card-light dark:bg-zinc-700 text-secondary shadow-sm font-semibold'
+                ? 'bg-card-light dark:bg-zinc-700 text-primary shadow-sm font-semibold'
                 : 'text-text-muted-light dark:text-text-muted-dark hover:bg-zinc-500/10'
         }`;
     };

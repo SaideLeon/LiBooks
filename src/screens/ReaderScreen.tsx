@@ -32,7 +32,7 @@ interface ReaderToolbarProps {
 }
 
 const ReaderToolbar: React.FC<ReaderToolbarProps> = ({ isBookmarked, onBookmarkToggle }) => (
-    <div className="fixed bottom-0 left-0 right-0 z-10 flex flex-col bg-background-light dark:bg-background-dark shadow-[0_-1px_3px_rgba(0,0,0,0.1)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.5)] max-w-lg mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-background-light dark:bg-background-dark shadow-[0_-1px_3px_rgba(0,0,0,0.1)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.5)] max-w-lg mx-auto">
         <div className="flex h-16 items-center justify-around border-t border-zinc-200 dark:border-zinc-800">
             <button onClick={onBookmarkToggle} className={`flex size-12 items-center justify-center rounded-full ${isBookmarked ? 'text-secondary' : 'text-zinc-600 dark:text-zinc-300'}`}>
                 <span className="material-symbols-outlined text-2xl" style={isBookmarked ? {fontVariationSettings: "'FILL' 1"} : {}}>{isBookmarked ? 'bookmark' : 'bookmark_add'}</span>
