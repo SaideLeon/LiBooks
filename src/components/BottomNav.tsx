@@ -34,6 +34,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab }) => {
     { id: 'library', label: 'Biblioteca', icon: 'bookmarks' },
     { id: 'community', label: 'Feed', icon: 'forum' },
     { id: 'profile', label: 'Perfil', icon: 'person' },
+    { id: 'settings', label: 'Ajustes', icon: 'settings' },
   ];
 
   return (
