@@ -51,7 +51,7 @@ type FormData = {
 };
 
 const SortableChapter: React.FC<{ id: any; index: number; onRemove: () => void; children: React.ReactNode, control: any }> = ({ id, index, onRemove, children, control }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const {
     attributes,
     listeners,
