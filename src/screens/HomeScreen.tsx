@@ -32,7 +32,7 @@ const BookCarouselItem: React.FC<{ book: Book; progress?: ReadingProgress; onCli
             <div className="relative w-full">
                 <div className="aspect-[2/3] w-full rounded-lg bg-cover bg-center bg-no-repeat shadow-lg" style={{ backgroundImage: `url("${book.coverUrl}")` }}></div>
                 {progress && <div className="absolute bottom-0 h-1.5 w-full rounded-full bg-card-light/50 dark:bg-card-dark/50">
-                    <div className="h-1.5 rounded-full bg-secondary" style={{ width: `${progressPercentage}%` }}></div>
+                    <div className="h-1.5 rounded-full bg-green" style={{ width: `${progressPercentage}%` }}></div>
                 </div>}
             </div>
             <div>
