@@ -22,6 +22,9 @@ import { Screen, NavigationState } from '@/lib/definitions';
 import { useUser, UserProvider } from '@/hooks/use-user';
 import { getBookById, getUserById } from '@/lib/actions';
 
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+
 const MainApp: React.FC = () => {
   const { user, isLoading, login } = useUser();
   const [navigation, setNavigation] = useState<NavigationState>({ screen: 'home' });
@@ -130,6 +133,25 @@ const MainApp: React.FC = () => {
         {content}
       </main>
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="absolute bottom-24 right-4 lg:hidden">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center">
+              <span className="material-symbols-outlined text-white text-3xl">add</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 mb-2">
+            <DropdownMenuItem onClick={() => navigate('newPublication')}>
+              <span className="material-symbols-outlined mr-2">edit_note</span>
+              <span>Nova Publicação</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('newBook')}>
+              <span className="material-symbols-outlined mr-2">book</span>
+              <span>Publicar Livro</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };
