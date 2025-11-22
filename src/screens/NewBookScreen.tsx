@@ -10,7 +10,25 @@ import { useToast } from '@/hooks/use-toast';
 import { createBook, splitTextIntoVersesAction, updateBook } from '@/lib/actions';
 import { Spinner } from '@/components/Spinner';
 import { useUser } from '@/hooks/use-user';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { BookWithChapters, NavigateFunction } from '@/lib/definitions';
+
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface BookFormScreenProps {
   goBack: () => void;
@@ -32,6 +50,41 @@ type FormData = {
   }[];
 };
 
+const SortableChapter: React.FC<{ id: any; index: number; onRemove: () => void; children: React.ReactNode }> = ({ id, index, onRemove, children }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="p-4 border rounded-lg relative bg-card-light dark:bg-card-dark touch-manipulation">
+      <div {...attributes} {...listeners} className="absolute top-1/2 -translate-y-1/2 left-2 cursor-grab touch-none p-2">
+        <span className="material-symbols-outlined">drag_indicator</span>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="absolute top-2 right-2 text-destructive z-10"
+        onClick={onRemove}
+      >
+        <span className="material-symbols-outlined">delete</span>
+      </Button>
+      <div className="ml-8">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, existingBook }) => {
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +103,13 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
       chapters: [{ title: '', subtitle: '', content: '' }],
     },
   });
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     if (isEditing && existingBook) {
@@ -70,10 +130,19 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
   }, [isEditing, existingBook, reset]);
 
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, move } = useFieldArray({
     control,
     name: 'chapters',
   });
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = fields.findIndex((item) => item.id === active.id);
+      const newIndex = fields.findIndex((item) => item.id === over.id);
+      move(oldIndex, newIndex);
+    }
+  };
 
   const handleVerseSplit = async (chapterIndex: number) => {
     const content = getValues(`chapters.${chapterIndex}.content`);
@@ -202,56 +271,55 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
           {/* Chapters */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold border-b pb-2">Capítulos</h2>
-            {fields.map((field, index) => (
-              <div key={field.id} className="space-y-4 p-4 border rounded-lg relative">
-                 <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 text-destructive"
-                  onClick={() => remove(index)}
-                >
-                  <span className="material-symbols-outlined">delete</span>
-                </Button>
-                <h3 className="font-semibold text-lg">Capítulo {index + 1}</h3>
-                <div>
-                  <Label htmlFor={`chapters.${index}.title`}>Título do Capítulo</Label>
-                  <Input
-                    id={`chapters.${index}.title`}
-                    {...register(`chapters.${index}.title` as const, { required: 'Título do capítulo é obrigatório' })}
-                  />
-                  {errors.chapters?.[index]?.title && <p className="text-red-500 text-sm mt-1">{errors.chapters[index]?.title?.message}</p>}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-4">
+                  {fields.map((field, index) => (
+                    <SortableChapter key={field.id} id={field.id} index={index} onRemove={() => fields.length > 1 && remove(index)}>
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Capítulo {index + 1}</h3>
+                        <div>
+                          <Label htmlFor={`chapters.${index}.title`}>Título do Capítulo</Label>
+                          <Input
+                            id={`chapters.${index}.title`}
+                            {...register(`chapters.${index}.title` as const, { required: 'Título do capítulo é obrigatório' })}
+                          />
+                          {errors.chapters?.[index]?.title && <p className="text-red-500 text-sm mt-1">{errors.chapters[index]?.title?.message}</p>}
+                        </div>
+                        <div>
+                          <Label htmlFor={`chapters.${index}.subtitle`}>Subtítulo (Opcional)</Label>
+                          <Input
+                            id={`chapters.${index}.subtitle`}
+                            {...register(`chapters.${index}.subtitle` as const)}
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <Label htmlFor={`chapters.${index}.content`}>Conteúdo do Capítulo</Label>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleVerseSplit(index)}
+                              disabled={isSplittingVerse === index}
+                            >
+                              {isSplittingVerse === index ? <><Spinner /> Dividindo...</> : 'Dividir com IA'}
+                            </Button>
+                          </div>
+                          <Textarea
+                            id={`chapters.${index}.content`}
+                            {...register(`chapters.${index}.content` as const, { required: 'Conteúdo é obrigatório' })}
+                            rows={10}
+                            placeholder="Escreva o conteúdo do capítulo aqui. Use uma linha por parágrafo."
+                          />
+                          {errors.chapters?.[index]?.content && <p className="text-red-500 text-sm mt-1">{errors.chapters[index]?.content?.message}</p>}
+                        </div>
+                      </div>
+                    </SortableChapter>
+                  ))}
                 </div>
-                 <div>
-                  <Label htmlFor={`chapters.${index}.subtitle`}>Subtítulo (Opcional)</Label>
-                  <Input
-                    id={`chapters.${index}.subtitle`}
-                    {...register(`chapters.${index}.subtitle` as const)}
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <Label htmlFor={`chapters.${index}.content`}>Conteúdo do Capítulo</Label>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleVerseSplit(index)}
-                      disabled={isSplittingVerse === index}
-                    >
-                      {isSplittingVerse === index ? <><Spinner /> Dividindo...</> : 'Dividir com IA'}
-                    </Button>
-                  </div>
-                  <Textarea
-                    id={`chapters.${index}.content`}
-                    {...register(`chapters.${index}.content` as const, { required: 'Conteúdo é obrigatório' })}
-                    rows={10}
-                    placeholder="Escreva o conteúdo do capítulo aqui. Use uma linha por parágrafo."
-                  />
-                   {errors.chapters?.[index]?.content && <p className="text-red-500 text-sm mt-1">{errors.chapters[index]?.content?.message}</p>}
-                </div>
-              </div>
-            ))}
+              </SortableContext>
+            </DndContext>
             <Button type="button" variant="outline" onClick={() => append({ title: '', subtitle: '', content: '' })}>
               <span className="material-symbols-outlined mr-2">add</span>
               Adicionar Capítulo

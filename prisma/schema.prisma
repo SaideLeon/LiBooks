@@ -55,6 +55,7 @@ model Chapter {
   content   String[]
   book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   bookId    Int
+  order     Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   readingProgress ReadingProgress[]

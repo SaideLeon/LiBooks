@@ -222,21 +222,55 @@ export const getBooks = async (): Promise<(Book & { author: User; chapters: Chap
 
 export const getBookById = async (id: number): Promise<(Book & { author: User, chapters: Chapter[] }) | null> => {
 
+
+
     const book = await db.book.findUnique({
+
+
 
         where: { id },
 
+
+
         include: {
+
+
 
             author: true,
 
-            chapters: true,
+
+
+            chapters: {
+
+
+
+                orderBy: {
+
+
+
+                    order: 'asc'
+
+
+
+                }
+
+
+
+            },
+
+
 
         }
 
+
+
     });
 
+
+
     return book;
+
+
 
 };
 
@@ -262,7 +296,7 @@ export const createBook = async (bookData: {
       authorName,
       authorId,
       chapters: {
-        create: await Promise.all(chapters.map(async ch => {
+        create: await Promise.all(chapters.map(async (ch, index) => {
           // If content was already split by AI on the client, it will contain '\n\n'.
           const verses = ch.content.includes('\n\n')
             ? ch.content.split('\n\n')
@@ -273,6 +307,7 @@ export const createBook = async (bookData: {
             subtitle: ch.subtitle,
             rawContent: ch.content,
             content: verses.map(p => p.trim()).filter(p => p.length > 0),
+            order: index,
           };
         }))
       }
@@ -301,74 +336,50 @@ export const updateBook = async (bookId: number, bookData: {
 }) => {
   const { title, description, preface, coverUrl, authorName, chapters } = bookData;
 
-  const existingBook = await db.book.findUnique({
-    where: { id: bookId },
-    include: { chapters: true },
-  });
-
-  if (!existingBook) {
-    throw new Error('Book not found');
-  }
-
-  const existingChapterIds = existingBook.chapters.map(c => c.id);
-  const incomingChapterIds = chapters.map(c => c.id).filter((id): id is number => id !== undefined);
-
-  const chaptersToDelete = existingChapterIds.filter(id => !incomingChapterIds.includes(id));
-  const chaptersToUpdate = chapters.filter((c): c is { id: number; title: string; subtitle: string; content: string } => c.id !== undefined && existingChapterIds.includes(c.id));
-  const chaptersToCreate = chapters.filter(c => c.id === undefined);
-
   await db.$transaction(async (tx) => {
+    // 1. Update book details
     await tx.book.update({
       where: { id: bookId },
-      data: {
-        title,
-        description,
-        preface,
-        coverUrl,
-        authorName,
-      },
+      data: { title, description, preface, coverUrl, authorName },
     });
 
+    const existingChapters = await tx.chapter.findMany({ where: { bookId: bookId } });
+    const existingChapterIds = existingChapters.map(c => c.id);
+    const submittedChapterIds = chapters.map(c => c.id).filter((id): id is number => id !== undefined);
+    
+    // 2. Delete chapters that were removed
+    const chaptersToDelete = existingChapterIds.filter(id => !submittedChapterIds.includes(id));
     if (chaptersToDelete.length > 0) {
-      await tx.chapter.deleteMany({
-        where: { id: { in: chaptersToDelete } },
-      });
+      await tx.chapter.deleteMany({ where: { id: { in: chaptersToDelete } } });
     }
 
-    for (const chapter of chaptersToUpdate) {
-      // If content was already split by AI on the client, it will contain '\n\n'.
-      const verses = chapter.content.includes('\n\n')
-        ? chapter.content.split('\n\n')
-        : (await splitTextIntoVerses(chapter.content)).verses;
+    // 3. Update existing chapters and create new ones
+    for (const [index, chapterData] of chapters.entries()) {
+      const verses = chapterData.content.includes('\n\n')
+          ? chapterData.content.split('\n\n')
+          : (await splitTextIntoVerses(chapterData.content)).verses;
 
-      await tx.chapter.update({
-        where: { id: chapter.id },
-        data: {
-          title: chapter.title,
-          subtitle: chapter.subtitle,
-          rawContent: chapter.content,
-          content: verses.map(p => p.trim()).filter(p => p.length > 0),
-        },
-      });
-    }
+      const dataPayload = {
+        title: chapterData.title,
+        subtitle: chapterData.subtitle,
+        rawContent: chapterData.content,
+        content: verses.map(p => p.trim()).filter(p => p.length > 0),
+        order: index,
+      };
 
-    if (chaptersToCreate.length > 0) {
-        await tx.chapter.createMany({
-            data: await Promise.all(chaptersToCreate.map(async chapter => {
-                // If content was already split by AI on the client, it will contain '\n\n'.
-                const verses = chapter.content.includes('\n\n')
-                    ? chapter.content.split('\n\n')
-                    : (await splitTextIntoVerses(chapter.content)).verses;
-                
-                return {
-                    bookId: bookId,
-                    title: chapter.title,
-                    subtitle: chapter.subtitle,
-                    rawContent: chapter.content,
-                    content: verses.map(p => p.trim()).filter(p => p.length > 0),
-                };
-            }))
+      if (chapterData.id) { // This is an existing chapter
+        await tx.chapter.update({
+          where: { id: chapterData.id },
+          data: dataPayload,
         });
+      } else { // This is a new chapter
+        await tx.chapter.create({
+          data: {
+            ...dataPayload,
+            bookId: bookId,
+          },
+        });
+      }
     }
   });
 
