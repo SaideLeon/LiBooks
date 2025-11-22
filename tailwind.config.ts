@@ -60,6 +60,7 @@ const config = {
         "text-dark": "var(--text-dark)",
         "text-muted-dark": "var(--text-muted-dark)",
         "card-dark": "var(--card-dark)",
+        green: "hsl(var(--green-500))",
       },
       borderRadius: {
         lg: "var(--radius)",
