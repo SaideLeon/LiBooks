@@ -54,13 +54,22 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({ isBookmarked, onBookmarkT
 
 const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph, goBack }) => {
   const { user: currentUser } = useUser();
-  const currentChapter = book.chapters?.find(c => c.id === chapterId);
+  const [currentChapterId, setCurrentChapterId] = useState(chapterId);
+  const currentChapter = book.chapters?.find(c => c.id === currentChapterId);
   const [selectedParagraph, setSelectedParagraph] = useState<number | null>(paragraph || null);
   const [annotations, setAnnotations] = useState<Record<number, string>>({});
   const [loadingAnnotation, setLoadingAnnotation] = useState<number | null>(null);
   const [isCurrentParagraphBookmarked, setIsCurrentParagraphBookmarked] = useState(false);
   const paragraphRefs = useRef<(HTMLDivElement | null)[]>([]);
   const { toast } = useToast();
+  const [isChapterListOpen, setIsChapterListOpen] = useState(false);
+
+  const handleChapterChange = (newChapterId: number) => {
+    setCurrentChapterId(newChapterId);
+    setSelectedParagraph(null);
+    setAnnotations({});
+    setIsChapterListOpen(false);
+  };
   
   useEffect(() => {
     if (paragraph && paragraphRefs.current[paragraph - 1]) {
@@ -150,6 +159,9 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
     }
   };
 
+  const chapterIndex = book.chapters?.findIndex(c => c.id === currentChapterId) ?? -1;
+  const chapterNumber = chapterIndex + 1;
+
   if (!currentChapter) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
@@ -167,9 +179,9 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
         </button>
         <div className="text-center">
             <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{book.title}</h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">Capítulo {currentChapter.id}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Capítulo {chapterNumber}</p>
         </div>
-        <AlertDialog>
+        <AlertDialog open={isChapterListOpen} onOpenChange={setIsChapterListOpen}>
           <AlertDialogTrigger asChild>
             <button className="flex size-10 items-center justify-center rounded-full">
                 <span className="material-symbols-outlined text-2xl">menu_book</span>
@@ -183,8 +195,10 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, chapterId, paragraph,
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="max-h-60 overflow-y-auto">
-              {book.chapters?.map(chap => (
-                <a key={chap.id} href={`#`} className="block p-2 rounded-md hover:bg-accent">{chap.title}</a>
+              {book.chapters?.map((chap, index) => (
+                <a key={chap.id} href="#" onClick={(e) => { e.preventDefault(); handleChapterChange(chap.id); }} className={`block p-2 rounded-md hover:bg-accent ${chap.id === currentChapterId ? 'bg-accent font-bold' : ''}`}>
+                  Capítulo {index + 1}: {chap.title}
+                </a>
               ))}
             </div>
             <AlertDialogFooter>
