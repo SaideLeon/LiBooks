@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,7 +106,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
   
   const isEditing = !!existingBook;
 
-  const { register, control, handleSubmit, formState: { errors }, reset, getValues, setValue } = useForm<FormData>({
+  const { register, control, handleSubmit, formState: { errors }, reset, getValues, setValue, watch } = useForm<FormData>({
     defaultValues: {
       title: '',
       authorName: '',
@@ -117,6 +117,9 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
     },
   });
   
+  const coverUrlValue = watch('coverUrl');
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -139,8 +142,24 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
               content: c.rawContent || (Array.isArray(c.content) ? c.content.join('\n\n') : ''),
             })) || [{ title: '', subtitle: '', content: '' }],
         });
+        if (existingBook.coverUrl) {
+            setCoverPreview(existingBook.coverUrl);
+        }
     }
   }, [isEditing, existingBook, reset]);
+  
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setValue('coverUrl', result, { shouldValidate: true });
+        setCoverPreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
 
   const { fields, append, remove, move } = useFieldArray({
@@ -200,11 +219,9 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
 
     setIsSubmitting(true);
     try {
-        // Data is now sent directly without client-side processing
-
         const bookData = {
             ...data,
-            authorId: user.id, // Ensure authorId is included
+            authorId: user.id,
         };
 
         let newOrUpdatedBook;
@@ -265,11 +282,29 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
               <Input id="authorName" {...register('authorName', { required: 'Nome do autor é obrigatório' })} />
               {errors.authorName && <p className="text-red-500 text-sm mt-1">{errors.authorName.message}</p>}
             </div>
+            
             <div>
-              <Label htmlFor="coverUrl">URL da Capa</Label>
-              <Input id="coverUrl" {...register('coverUrl', { required: 'URL da capa é obrigatória' })} placeholder="https://exemplo.com/capa.jpg" />
-              {errors.coverUrl && <p className="text-red-500 text-sm mt-1">{errors.coverUrl.message}</p>}
+                <Label htmlFor="cover-upload">Capa do Livro</Label>
+                <div className="mt-2 flex items-center gap-4">
+                    <div className="w-24 h-36 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center border border-dashed border-zinc-300 dark:border-zinc-700">
+                        {coverPreview ? (
+                            <img src={coverPreview} alt="Prévia da capa" className="w-full h-full object-cover rounded-md" />
+                        ) : (
+                            <span className="material-symbols-outlined text-4xl text-zinc-400">photo_camera</span>
+                        )}
+                    </div>
+                    <div className="flex-1">
+                        <Input id="cover-upload" type="file" accept="image/*" onChange={handleCoverImageChange} className="hidden" />
+                        <Button type="button" onClick={() => document.getElementById('cover-upload')?.click()}>
+                            Escolher Imagem
+                        </Button>
+                        <p className="text-xs text-zinc-500 mt-2">JPG, PNG, ou WEBP. Recomendado: 400x600px.</p>
+                        <input type="hidden" {...register('coverUrl', { required: 'A imagem da capa é obrigatória' })} />
+                    </div>
+                </div>
+                {errors.coverUrl && <p className="text-red-500 text-sm mt-1">{errors.coverUrl.message}</p>}
             </div>
+
             <div>
               <Label htmlFor="description">Descrição</Label>
               <Textarea id="description" {...register('description', { required: 'Descrição é obrigatória' })} />
@@ -344,3 +379,5 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
 };
 
 export default BookFormScreen;
+
+    
