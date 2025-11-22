@@ -79,7 +79,14 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
     }
   };
 
-  const buttonText = progress ? `Continuar de onde parou (Cap. ${progress.chapterId})` : 'Começar a Ler';
+  const getChapterNumber = () => {
+      if (!progress || !book.chapters) return '';
+      const chapterIndex = book.chapters.findIndex(c => c.id === progress.chapterId);
+      return chapterIndex !== -1 ? chapterIndex + 1 : '';
+  };
+
+  const chapterNumber = getChapterNumber();
+  const buttonText = progress ? `Continuar de onde parou (Cap. ${chapterNumber})` : 'Começar a Ler';
 
   return (
     <div className="text-zinc-800 dark:text-zinc-200">
