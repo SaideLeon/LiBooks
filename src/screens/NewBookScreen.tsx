@@ -1,7 +1,7 @@
 
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,7 +50,8 @@ type FormData = {
   }[];
 };
 
-const SortableChapter: React.FC<{ id: any; index: number; onRemove: () => void; children: React.ReactNode }> = ({ id, index, onRemove, children }) => {
+const SortableChapter: React.FC<{ id: any; index: number; onRemove: () => void; children: React.ReactNode, control: any }> = ({ id, index, onRemove, children, control }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
   const {
     attributes,
     listeners,
@@ -63,24 +64,36 @@ const SortableChapter: React.FC<{ id: any; index: number; onRemove: () => void; 
     transform: CSS.Transform.toString(transform),
     transition,
   };
+  
+  const title = useWatch({
+    control,
+    name: `chapters.${index}.title`,
+  });
 
   return (
-    <div ref={setNodeRef} style={style} className="p-4 border rounded-lg relative bg-card-light dark:bg-card-dark touch-manipulation">
-      <div {...attributes} {...listeners} className="absolute top-1/2 -translate-y-1/2 left-2 cursor-grab touch-none p-2">
-        <span className="material-symbols-outlined">drag_indicator</span>
+    <div ref={setNodeRef} style={style} className="border rounded-lg bg-card-light dark:bg-card-dark touch-manipulation">
+      <div className="flex items-center p-2">
+        <div {...attributes} {...listeners} className="cursor-grab touch-none p-2">
+          <span className="material-symbols-outlined">drag_indicator</span>
+        </div>
+        <div className="flex-grow font-semibold text-lg truncate pr-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+          Capítulo {index + 1}: {title || "Novo Capítulo"}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="text-destructive z-10"
+          onClick={onRemove}
+        >
+          <span className="material-symbols-outlined">delete</span>
+        </Button>
+        <Button asChild variant="ghost" size="icon" onClick={() => setIsExpanded(!isExpanded)} className="cursor-pointer">
+          <span className="material-symbols-outlined">{isExpanded ? 'expand_less' : 'expand_more'}</span>
+        </Button>
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="absolute top-2 right-2 text-destructive z-10"
-        onClick={onRemove}
-      >
-        <span className="material-symbols-outlined">delete</span>
-      </Button>
-      <div className="ml-8">
-        {children}
-      </div>
+
+      {isExpanded && <div className="p-4 border-t border-zinc-200 dark:border-zinc-700">{children}</div>}
     </div>
   );
 };
@@ -275,9 +288,8 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
               <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-4">
                   {fields.map((field, index) => (
-                    <SortableChapter key={field.id} id={field.id} index={index} onRemove={() => fields.length > 1 && remove(index)}>
+                    <SortableChapter key={field.id} id={field.id} index={index} onRemove={() => fields.length > 1 && remove(index)} control={control}>
                       <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Capítulo {index + 1}</h3>
                         <div>
                           <Label htmlFor={`chapters.${index}.title`}>Título do Capítulo</Label>
                           <Input
