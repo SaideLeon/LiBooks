@@ -144,35 +144,37 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
     }
   }, [isEditing, existingBook, reset]);
   
-  const handleCoverImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+ const handleCoverImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', file);
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
 
-        try {
-            const response = await fetch('https://uploader.nativespeak.app/upload', {
-                method: 'POST',
-                body: formData,
-            });
+      try {
+        // Enviar para o proxy de API local
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-            if (!response.ok) {
-                throw new Error('Falha no upload da imagem');
-            }
-
-            const { url } = await response.json();
-            setValue('coverUrl', url, { shouldValidate: true });
-
-        } catch (error) {
-            toast({
-                variant: 'destructive',
-                title: 'Erro de Upload',
-                description: 'Não foi possível carregar a imagem. Tente novamente.',
-            });
-        } finally {
-            setIsUploading(false);
+        if (!response.ok) {
+          throw new Error('Falha no upload da imagem através do proxy.');
         }
+
+        const { url } = await response.json();
+        setValue('coverUrl', url, { shouldValidate: true });
+
+      } catch (error) {
+        console.error('Erro de upload:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro de Upload',
+          description: 'Não foi possível carregar a imagem. Tente novamente.',
+        });
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -401,5 +403,3 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
 };
 
 export default BookFormScreen;
-
-    
