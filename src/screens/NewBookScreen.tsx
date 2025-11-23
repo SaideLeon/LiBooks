@@ -101,6 +101,7 @@ const SortableChapter: React.FC<{ id: any; index: number; onRemove: () => void; 
 const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, existingBook }) => {
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isSplittingVerse, setIsSplittingVerse] = useState<number | null>(null);
   const { toast } = useToast();
   
@@ -118,7 +119,6 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
   });
   
   const coverUrlValue = watch('coverUrl');
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -138,29 +138,43 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
             chapters: existingBook.chapters?.map(c => ({
               ...c, 
               subtitle: c.subtitle || '', // Handle null subtitle
-              // Prioritize rawContent, fall back to joining the array for old data
               content: c.rawContent || (Array.isArray(c.content) ? c.content.join('\n\n') : ''),
             })) || [{ title: '', subtitle: '', content: '' }],
         });
-        if (existingBook.coverUrl) {
-            setCoverPreview(existingBook.coverUrl);
-        }
     }
   }, [isEditing, existingBook, reset]);
   
-  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setValue('coverUrl', result, { shouldValidate: true });
-        setCoverPreview(result);
-      };
-      reader.readAsDataURL(file);
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('Falha no upload da imagem');
+            }
+
+            const { url } = await response.json();
+            setValue('coverUrl', url, { shouldValidate: true });
+
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Upload',
+                description: 'Não foi possível carregar a imagem. Tente novamente.',
+            });
+        } finally {
+            setIsUploading(false);
+        }
     }
   };
-
 
   const { fields, append, remove, move } = useFieldArray({
     control,
@@ -189,8 +203,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
 
     setIsSplittingVerse(chapterIndex);
     try {
-      const cleanedContent = content.replace(/(\r\n|\n|\r)/gm, ' '); // Remove all line breaks
-      const verses = await splitTextIntoVersesAction(cleanedContent);
+      const verses = await splitTextIntoVersesAction(content);
       setValue(`chapters.${chapterIndex}.content`, verses.join('\n\n'));
       toast({
         title: 'Conteúdo dividido!',
@@ -215,6 +228,15 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
             description: 'Você precisa estar logado para publicar ou editar um livro.',
         });
         return;
+    }
+
+    if (!data.coverUrl) {
+      toast({
+        variant: 'destructive',
+        title: 'Capa do Livro Obrigatória',
+        description: 'Por favor, faça o upload de uma imagem para a capa.',
+      });
+      return;
     }
 
     setIsSubmitting(true);
@@ -262,7 +284,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
           <span className="material-symbols-outlined">close</span>
         </Button>
         <h1 className="flex-1 text-center text-lg font-bold">{headerTitle}</h1>
-        <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+        <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting || isUploading}>
           {isSubmitting ? <><Spinner /> Salvando...</> : submitButtonText}
         </Button>
       </header>
@@ -286,23 +308,23 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
             <div>
                 <Label htmlFor="cover-upload">Capa do Livro</Label>
                 <div className="mt-2 flex items-center gap-4">
-                    <div className="w-24 h-36 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center border border-dashed border-zinc-300 dark:border-zinc-700">
-                        {coverPreview ? (
-                            <img src={coverPreview} alt="Prévia da capa" className="w-full h-full object-cover rounded-md" />
+                    <div className="w-24 h-36 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center border border-dashed border-zinc-300 dark:border-zinc-700 overflow-hidden">
+                        {coverUrlValue ? (
+                            <img src={coverUrlValue} alt="Prévia da capa" className="w-full h-full object-cover" />
                         ) : (
                             <span className="material-symbols-outlined text-4xl text-zinc-400">photo_camera</span>
                         )}
                     </div>
                     <div className="flex-1">
-                        <Input id="cover-upload" type="file" accept="image/*" onChange={handleCoverImageChange} className="hidden" />
-                        <Button type="button" onClick={() => document.getElementById('cover-upload')?.click()}>
-                            Escolher Imagem
+                        <Input id="cover-upload" type="file" accept="image/*" onChange={handleCoverImageChange} className="hidden" disabled={isUploading} />
+                        <Button type="button" onClick={() => document.getElementById('cover-upload')?.click()} disabled={isUploading}>
+                            {isUploading ? <><Spinner /> Carregando...</> : 'Escolher Imagem'}
                         </Button>
                         <p className="text-xs text-zinc-500 mt-2">JPG, PNG, ou WEBP. Recomendado: 400x600px.</p>
                         <input type="hidden" {...register('coverUrl', { required: 'A imagem da capa é obrigatória' })} />
                     </div>
                 </div>
-                {errors.coverUrl && <p className="text-red-500 text-sm mt-1">{errors.coverUrl.message}</p>}
+                {errors.coverUrl && !coverUrlValue && <p className="text-red-500 text-sm mt-1">{errors.coverUrl.message}</p>}
             </div>
 
             <div>
