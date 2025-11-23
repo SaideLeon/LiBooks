@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import LandingScreen from '@/screens/LandingScreen';
@@ -123,6 +124,8 @@ const MainApp: React.FC = () => {
       content = <HomeScreen navigate={navigate} currentUser={user} />;
   }
 
+  const showBottomNav = !['reader', 'newPublication', 'newBook', 'editBook'].includes(navigation.screen);
+
   return (
     <div className="h-dvh w-full lg:grid lg:grid-cols-[280px_1fr]">
       <div className="hidden lg:block border-r border-gray-200/80 dark:border-gray-800/80">
@@ -131,7 +134,7 @@ const MainApp: React.FC = () => {
       <main className="h-full overflow-y-auto pb-20 lg:pb-0">
         {content}
       </main>
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      {showBottomNav && <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />}
       <div className="absolute bottom-24 right-4 lg:hidden">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
