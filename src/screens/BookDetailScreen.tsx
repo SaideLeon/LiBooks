@@ -90,19 +90,26 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
 
   return (
     <div className="text-zinc-800 dark:text-zinc-200">
-        <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm lg:hidden">
+        <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
             <div className="flex h-16 items-center px-4">
                 <button onClick={goBack} className="flex size-10 shrink-0 items-center justify-center">
                     <span className="material-symbols-outlined text-2xl">arrow_back</span>
                 </button>
                 <div className="flex-1"></div>
-                <div className="flex items-center gap-2">
+                 <div className="flex items-center gap-2">
                     <button className="flex size-10 shrink-0 items-center justify-center">
                         <span className="material-symbols-outlined text-2xl">bookmark_border</span>
                     </button>
                     <button className="flex size-10 shrink-0 items-center justify-center">
                         <span className="material-symbols-outlined text-2xl">share</span>
                     </button>
+                    {isAuthor && 
+                        <div className="lg:hidden">
+                            <Button variant="ghost" size="icon" onClick={() => navigate('editBook', { bookId: book.id })}>
+                                <span className="material-symbols-outlined text-2xl">edit</span>
+                            </Button>
+                        </div>
+                    }
                 </div>
             </div>
         </header>
@@ -117,12 +124,6 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                         <p className="mt-1 text-base md:text-lg text-zinc-600 dark:text-zinc-400">{book.authorName}</p>
                     </div>
                      <div className="hidden md:flex items-center gap-2 mt-4">
-                        <button className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-light dark:bg-card-dark/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50">
-                            <span className="material-symbols-outlined text-2xl">bookmark_border</span>
-                        </button>
-                        <button className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card-light dark:bg-card-dark/80 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50">
-                            <span className="material-symbols-outlined text-2xl">share</span>
-                        </button>
                         {isAuthor && <Button variant="outline" onClick={() => navigate('editBook', { bookId: book.id })}>Editar Livro</Button>}
                     </div>
                     <div className="mt-6 w-full px-6 md:px-0">
@@ -139,7 +140,6 @@ const BookDetailScreen: React.FC<BookDetailScreenProps> = ({ book, goBack, navig
                             <span className="material-symbols-outlined">menu_book</span>
                             <span>Ver todos os capítulos</span>
                         </button>
-                         {isAuthor && <div className="md:hidden"><Button variant="outline" className='w-full' onClick={() => navigate('editBook', { bookId: book.id })}>Editar Livro</Button></div>}
                     </div>
                 </div>
             </div>
