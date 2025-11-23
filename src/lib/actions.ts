@@ -297,7 +297,7 @@ export const createBook = async (bookData: {
       authorId,
       chapters: {
         create: await Promise.all(chapters.map(async (ch, index) => {
-          // If content was already split by AI on the client, it will contain '\n\n'.
+          // If content was already split by IA on the client, it will contain '\n\n'.
           const verses = ch.content.includes('\n\n')
             ? ch.content.split('\n\n')
             : (await splitTextIntoVerses(ch.content)).verses;
@@ -663,45 +663,34 @@ export async function getAllBookmarks(userId: number): Promise<(Bookmark & { boo
 
 
 export async function addBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number, text: string): Promise<Bookmark> {
-
   const existing = await db.bookmark.findFirst({
-
-      where: { userId, bookId, chapterId, paragraphIndex }
-
+    where: { userId, bookId, chapterId, paragraphIndex },
   });
-
-  if (existing) return existing;
-
-
+  if (existing) {
+    console.warn("Bookmark already exists for this paragraph.");
+    return existing;
+  }
 
   const bookmark = await db.bookmark.create({
-
-      data: { userId, bookId, chapterId, paragraphIndex, text }
-
+    data: { userId, bookId, chapterId, paragraphIndex, text },
   });
-
+  revalidatePath('/library');
   return bookmark;
-
 }
 
-
-
 export async function removeBookmark(userId: number, bookId: number, chapterId: number, paragraphIndex: number): Promise<Bookmark | null> {
+  const bookmarkToDelete = await db.bookmark.findFirst({
+    where: { userId, bookId, chapterId, paragraphIndex },
+  });
 
-    const bookmarkToDelete = await db.bookmark.findFirst({
-
-        where: { userId, bookId, chapterId, paragraphIndex }
-
-    });
-
-    if (bookmarkToDelete) {
-
-        return await db.bookmark.delete({ where: { id: bookmarkToDelete.id } });
-
-    }
-
-    return null;
-
+  if (bookmarkToDelete) {
+    const deleted = await db.bookmark.delete({ where: { id: bookmarkToDelete.id } });
+    revalidatePath('/library');
+    return deleted;
+  }
+  
+  console.warn("No bookmark found to delete for this paragraph.");
+  return null;
 }
 
 
