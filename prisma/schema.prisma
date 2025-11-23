@@ -2,8 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "linux-arm64-openssl-1.1.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -16,123 +15,135 @@ model User {
   email         String          @unique
   name          String
   password      String
-  avatarUrl     String?
   bio           String?
+  avatarUrl     String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  posts         CommunityPost[] @relation("UserPosts")
+  authoredBooks Book[]
+  posts         CommunityPost[]
   comments      Comment[]
-  followers     Follow[]        @relation("Following")
-  following     Follow[]        @relation("Followers")
-  authoredBooks Book[]          @relation("AuthoredBy")
-  readingProgress ReadingProgress[]
+  likes         Like[]
+  followers     Follow[]        @relation("UserFollowers")
+  following     Follow[]        @relation("UserFollowing")
+  progress      ReadingProgress[]
   bookmarks     Bookmark[]
   activities    Activity[]
 }
 
 model Book {
-  id              Int             @id @default(autoincrement())
-  title           String
-  authorName      String
-  author          User            @relation("AuthoredBy", fields: [authorId], references: [id])
-  authorId        Int
-  description     String
-  coverUrl        String
-  preface         String?
-  chapters        Chapter[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  readingProgress ReadingProgress[]
-  bookmarks       Bookmark[]
-  activities      Activity[]      @relation("BookActivities")
+  id           Int             @id @default(autoincrement())
+  title        String
+  authorName   String
+  description  String
+  preface      String?
+  coverUrl     String
+  authorId     Int
+  author       User            @relation(fields: [authorId], references: [id])
+  chapters     Chapter[]
+  progress     ReadingProgress[]
+  bookmarks    Bookmark[]
+  activities   Activity[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 }
 
 model Chapter {
-  id        Int      @id @default(autoincrement())
-  title     String
-  subtitle  String?
+  id         Int      @id @default(autoincrement())
+  title      String
+  subtitle   String?
+  content    String[]
   rawContent String?
-  content   String[]
-  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  bookId    Int
-  order     Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  readingProgress ReadingProgress[]
-  bookmarks     Bookmark[]
+  order      Int
+  bookId     Int
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  progress   ReadingProgress[]
+  bookmarks  Bookmark[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model CommunityPost {
-  id          Int       @id @default(autoincrement())
-  author      User      @relation("UserPosts", fields: [authorId], references: [id])
-  authorId    Int
-  bookVerse   String
-  quote       String
-  comment     String
-  imageUrl    String?
-  likes       Int       @default(0)
-  comments    Comment[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        Int       @id @default(autoincrement())
+  authorId  Int
+  author    User      @relation(fields: [authorId], references: [id])
+  quote     String
+  comment   String
+  bookVerse String
+  imageUrl  String?
+  likes     Like[]
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Comment {
-  id            Int           @id @default(autoincrement())
-  author        User          @relation(fields: [authorId], references: [id])
-  authorId      Int
-  post          CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+  id              Int           @id @default(autoincrement())
+  text            String
+  authorId        Int
+  author          User          @relation(fields: [authorId], references: [id])
   communityPostId Int
-  text          String
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Like {
+  id              Int           @id @default(autoincrement())
+  authorId        Int
+  author          User          @relation(fields: [authorId], references: [id])
+  communityPostId Int
+  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+
+  @@unique([authorId, communityPostId])
 }
 
 model Follow {
   id          Int      @id @default(autoincrement())
-  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
   followerId  Int
-  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
   followingId Int
+  follower    User     @relation("UserFollowers", fields: [followerId], references: [id])
+  following   User     @relation("UserFollowing", fields: [followingId], references: [id])
   createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
 }
 
 model ReadingProgress {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  bookId    Int
-  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  chapterId Int
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  bookId         Int
+  book           Book     @relation(fields: [bookId], references: [id])
+  chapterId      Int
+  chapter        Chapter  @relation(fields: [chapterId], references: [id])
   paragraphIndex Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, bookId])
 }
 
 model Bookmark {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  bookId    Int
-  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  chapterId Int
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  bookId         Int
+  book           Book     @relation(fields: [bookId], references: [id])
+  chapterId      Int
+  chapter        Chapter  @relation(fields: [chapterId], references: [id])
   paragraphIndex Int
-  text      String
-  createdAt DateTime @default(now())
+  text           String
+  createdAt      DateTime @default(now())
 }
 
 model Activity {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  type      String // e.g., "STARTED_READING", "FINISHED_BOOK", "ADDED_BOOKMARK"
-  book      Book?    @relation("BookActivities", fields: [bookId], references: [id], onDelete: SetNull)
+  user      User     @relation(fields: [userId], references: [id])
+  type      String // e.g., 'STARTED_READING', 'FINISHED_BOOK', 'ADDED_BOOKMARK', 'WROTE_POST'
   bookId    Int?
+  book      Book?    @relation(fields: [bookId], references: [id])
   comment   String?
   createdAt DateTime @default(now())
 }

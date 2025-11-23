@@ -13,7 +13,7 @@ interface CommentWithUser extends CommentType {
 interface CommentsScreenProps {
   goBack: () => void;
   navigate: NavigateFunction;
-  post: CommunityPost;
+  post: CommunityPost & { author: User };
   currentUser: User;
 }
 
@@ -27,7 +27,7 @@ const CommentCard: React.FC<{ comment: CommentWithUser }> = ({ comment }) => (
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: ptBR })}
                 </p>
             </div>
-            <p className="pt-1 text-sm font-normal leading-normal text-zinc-700 dark:text-zinc-300">
+            <p className="pt-1 text-sm font-normal leading-normal text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
                 {comment.text}
             </p>
             <div className="flex w-full flex-row items-center justify-start gap-6 pt-3">
@@ -47,6 +47,7 @@ const CommentCard: React.FC<{ comment: CommentWithUser }> = ({ comment }) => (
 const CommentsScreen: React.FC<CommentsScreenProps> = ({ goBack, post, currentUser }) => {
     const [comments, setComments] = useState<CommentWithUser[]>([]);
     const [newCommentText, setNewCommentText] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -57,10 +58,17 @@ const CommentsScreen: React.FC<CommentsScreenProps> = ({ goBack, post, currentUs
     }, [post.id]);
 
     const handleAddComment = async () => {
-        if (newCommentText.trim() === '') return;
-        const newComment = await addComment(post.id, currentUser.id, newCommentText.trim());
-        setComments(prev => [newComment as CommentWithUser, ...prev]);
-        setNewCommentText('');
+        if (newCommentText.trim() === '' || isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            const newComment = await addComment(post.id, currentUser.id, newCommentText.trim());
+            setComments(prev => [newComment as CommentWithUser, ...prev]);
+            setNewCommentText('');
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -80,11 +88,11 @@ const CommentsScreen: React.FC<CommentsScreenProps> = ({ goBack, post, currentUs
             <main className="flex-grow pb-24">
                 <div className="px-4 pt-4">
                     <div className="rounded-xl bg-card-light p-4 shadow-sm dark:bg-card-dark/80">
+                         {post.imageUrl && (
+                            <img alt="Post image" className="aspect-[4/3] w-full object-cover mb-4 rounded-lg" src={post.imageUrl} />
+                        )}
                         <p className="text-base font-normal leading-relaxed text-slate-800 dark:text-slate-200">
-                            "{post.quote}"
-                        </p>
-                         <p className="text-base font-normal leading-relaxed text-slate-700 dark:text-slate-300 mt-2">
-                            {post.comment}
+                           {post.comment}
                         </p>
                     </div>
                 </div>
@@ -106,8 +114,9 @@ const CommentsScreen: React.FC<CommentsScreenProps> = ({ goBack, post, currentUs
                         value={newCommentText}
                         onChange={(e) => setNewCommentText(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                        disabled={isSubmitting}
                     />
-                    <button onClick={handleAddComment} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white transition-transform active:scale-95">
+                    <button onClick={handleAddComment} disabled={isSubmitting} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white transition-transform active:scale-95 disabled:opacity-50">
                         <span className="material-symbols-outlined text-xl">send</span>
                     </button>
                 </div>

@@ -1,12 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { CommunityPostWithAuthor, User } from '@/lib/prisma/definitions';
+import { CommunityPostWithDetails, User } from '@/lib/prisma/definitions';
 import { NavigateFunction } from '@/lib/definitions';
 import { getUserById, getCommunityPosts, getFollowers, getFollowing, getIsFollowing, toggleFollow } from '@/lib/actions';
 import { useUser } from '@/hooks/use-user';
 import { Spinner } from '@/components/Spinner';
 
-const PublicationCard: React.FC<{publication: CommunityPostWithAuthor}> = ({ publication }) => (
+const PublicationCard: React.FC<{publication: CommunityPostWithDetails}> = ({ publication }) => (
     <article className="p-4">
         <div className="flex flex-col items-stretch justify-start">
             {publication.imageUrl && (
@@ -18,7 +18,7 @@ const PublicationCard: React.FC<{publication: CommunityPostWithAuthor}> = ({ pub
                     {publication.quote && <p className="text-base font-normal leading-normal text-zinc-600 dark:text-zinc-300">
                        "{publication.quote}"
                     </p>}
-                    <p className="mt-2 text-base font-normal leading-normal text-zinc-600 dark:text-zinc-300">
+                    <p className="mt-2 text-base font-normal leading-normal text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap">
                         {publication.comment}
                     </p>
                 </div>
@@ -26,7 +26,7 @@ const PublicationCard: React.FC<{publication: CommunityPostWithAuthor}> = ({ pub
             <div className="flex flex-wrap gap-2 py-2">
                 <div className="flex cursor-pointer items-center justify-center gap-2 rounded-full px-3 py-2 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800">
                     <span className="material-symbols-outlined text-zinc-500 dark:text-zinc-400">favorite</span>
-                    <p className="text-[13px] font-bold leading-normal tracking-[0.015em] text-zinc-500 dark:text-zinc-400">{publication.likes}</p>
+                    <p className="text-[13px] font-bold leading-normal tracking-[0.015em] text-zinc-500 dark:text-zinc-400">{publication._count.likes}</p>
                 </div>
                 <div className="flex cursor-pointer items-center justify-center gap-2 rounded-full px-3 py-2 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800">
                     <span className="material-symbols-outlined text-zinc-500 dark:text-zinc-400">chat_bubble</span>
@@ -49,7 +49,7 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigate, user: profileUser }) => {
   const { user: currentUser } = useUser();
-  const [posts, setPosts] = useState<CommunityPostWithAuthor[]>([]);
+  const [posts, setPosts] = useState<CommunityPostWithDetails[]>([]);
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -60,7 +60,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigate, user: profileUs
         if (!profileUser) return;
         setIsLoading(true);
         const [userPosts, userFollowers, userFollowing, isFollowingStatus] = await Promise.all([
-            getCommunityPosts().then(p => p.filter(post => post.authorId === profileUser.id)),
+            getCommunityPosts(currentUser?.id).then(p => p.filter(post => post.authorId === profileUser.id)),
             getFollowers(profileUser.id),
             getFollowing(profileUser.id),
             currentUser ? getIsFollowing(currentUser.id, profileUser.id) : false

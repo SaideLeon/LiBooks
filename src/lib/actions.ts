@@ -11,7 +11,7 @@ import { splitTextIntoVerses } from '@/ai/flows/verse-splitter';
 
 import { revalidatePath } from 'next/cache';
 
-import type { User, Book, Chapter, CommunityPost, Comment, Follow, ReadingProgress, Bookmark, Activity } from '@prisma/client';
+import type { User, Book, Chapter, CommunityPost, Comment, Follow, ReadingProgress, Bookmark, Activity, Like } from '@prisma/client';
 
 
 
@@ -45,7 +45,7 @@ export async function splitTextIntoVersesAction(text: string): Promise<string[]>
 
 
 
-export type { User, Book, Chapter, CommunityPost, Comment, Follow, ReadingProgress, Bookmark, Activity };
+export type { User, Book, Chapter, CommunityPost, Comment, Follow, ReadingProgress, Bookmark, Activity, Like };
 
 
 
@@ -169,7 +169,7 @@ export const getCommentsForPost = async (postId: number): Promise<(Comment & { a
         orderBy: { createdAt: 'desc' }
 
     });
-
+    revalidatePath('/community');
     return comments;
 
 };
@@ -193,7 +193,7 @@ export const addComment = async (postId: number, userId: number, text: string): 
         include: { author: true }
 
     });
-
+    revalidatePath('/community');
     return newComment;
 
 };
@@ -392,36 +392,52 @@ export const updateBook = async (bookId: number, bookData: {
   return updatedBook as Book & { author: User, chapters: Chapter[] };
 };
 
-
-
-export const getCommunityPosts = async (): Promise<(CommunityPost & { author: User, _count: { comments: number } })[]> => {
+export const getCommunityPosts = async (currentUserId?: number): Promise<(CommunityPost & { author: User, _count: { comments: number, likes: number }, likes: { authorId: number }[] })[]> => {
 
     const posts = await db.communityPost.findMany({
-
         include: {
-
             author: true,
-
             _count: {
-
-                select: { comments: true }
-
-            }
-
+                select: { comments: true, likes: true }
+            },
+            likes: currentUserId ? { where: { authorId: currentUserId } } : false
         },
-
         orderBy: {
-
             createdAt: 'desc'
-
         }
-
     });
 
+    return posts as (CommunityPost & { author: User, _count: { comments: number, likes: number }, likes: { authorId: number }[] })[];
+};
 
+export const toggleLike = async (postId: number, userId: number) => {
+    const existingLike = await db.like.findUnique({
+        where: {
+            authorId_communityPostId: {
+                authorId: userId,
+                communityPostId: postId
+            }
+        }
+    });
 
-    return posts;
-
+    if (existingLike) {
+        await db.like.delete({
+            where: {
+                id: existingLike.id
+            }
+        });
+        revalidatePath('/community');
+        return { liked: false };
+    } else {
+        await db.like.create({
+            data: {
+                authorId: userId,
+                communityPostId: postId
+            }
+        });
+        revalidatePath('/community');
+        return { liked: true };
+    }
 };
 
 
@@ -440,14 +456,12 @@ export const createPublication = async (data: { authorId: number, content: strin
 
             imageUrl: data.image,
 
-            quote: '',
-
-            likes: 0
+            quote: ''
 
         }
 
     });
-
+    revalidatePath('/community');
     return publication;
 
 }
@@ -509,13 +523,15 @@ export const toggleFollow = async (currentUserId: number, targetUserId: number):
     if (existingFollow) {
 
         await db.follow.delete({ where: { id: existingFollow.id } });
-
+        revalidatePath('/community');
+        revalidatePath(`/profile/${targetUserId}`);
         return false; // Now not following
 
     } else {
 
         await db.follow.create({ data: { followerId: currentUserId, followingId: targetUserId } });
-
+        revalidatePath('/community');
+        revalidatePath(`/profile/${targetUserId}`);
         return true; // Now following
 
     }

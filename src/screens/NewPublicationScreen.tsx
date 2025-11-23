@@ -17,6 +17,7 @@ const NewPublicationScreen: React.FC<NewPublicationScreenProps> = ({ goBack, cur
   const [verses, setVerses] = useState<string[]>(['Gênesis 1:1', 'João 3:16']);
   const [isVerseSearchOpen, setIsVerseSearchOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const handlePublish = async () => {
@@ -64,15 +65,40 @@ const NewPublicationScreen: React.FC<NewPublicationScreenProps> = ({ goBack, cur
     setIsVerseSearchOpen(false);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(event.target.files[0]);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        // Enviar para o proxy de API local
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha no upload da imagem através do proxy.');
+        }
+
+        const { url } = await response.json();
+        setImage(url);
+
+      } catch (error) {
+        console.error('Erro de upload:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro de Upload',
+          description: 'Não foi possível carregar a imagem. Tente novamente.',
+        });
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
+
 
   return (
     <div className="flex h-dvh flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
@@ -81,7 +107,7 @@ const NewPublicationScreen: React.FC<NewPublicationScreenProps> = ({ goBack, cur
           <span className="material-symbols-outlined text-2xl">close</span>
         </button>
         <h1 className="flex-1 text-center text-lg font-bold">Nova Publicação</h1>
-        <button onClick={handlePublish} disabled={isSubmitting} className="flex h-10 w-auto items-center justify-center px-4 rounded-full bg-primary text-white disabled:opacity-50">
+        <button onClick={handlePublish} disabled={isSubmitting || isUploading} className="flex h-10 w-auto items-center justify-center px-4 rounded-full bg-primary text-white disabled:opacity-50">
           <p className="text-base font-bold">{isSubmitting ? <Spinner /> : 'Publicar'}</p>
         </button>
       </header>
@@ -124,7 +150,7 @@ const NewPublicationScreen: React.FC<NewPublicationScreenProps> = ({ goBack, cur
             <div className="flex items-center gap-1">
                 <label className="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-text-muted-light dark:text-text-muted-dark hover:bg-zinc-500/10">
                     <span className="material-symbols-outlined text-2xl">image</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploading} />
                 </label>
             </div>
             <button onClick={() => setIsVerseSearchOpen(true)} className="flex h-10 min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg bg-primary px-4 text-sm font-medium text-white">
