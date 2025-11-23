@@ -152,7 +152,7 @@ const BookFormScreen: React.FC<BookFormScreenProps> = ({ goBack, navigate, exist
         formData.append('file', file);
 
         try {
-            const response = await fetch('/api/upload', {
+            const response = await fetch('https://uploader.nativespeak.app/upload', {
                 method: 'POST',
                 body: formData,
             });
